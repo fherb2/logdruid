@@ -1,0 +1,70 @@
+# Example logging configuration, read by logdruid.
+#
+# Location: next to the entry point, which passes the path. Read with
+# tomllib from the standard library. Mistakes here produce warnings,
+# never an abort; the application then runs with what remains valid.
+#
+# Layers, lowest first: defaults of logdruid < what the application
+# passes < this file < command line. --log-level replaces every level of
+# this file; translations stay.
+
+# Level of every process and every name without a level of its own.
+# Suggested meaning of the levels: TRACE is lasting fine detail of the
+# regular code, DEBUG is reserved for temporary debugging code, INFO is
+# the regular course of operation, SUCCESS marks a step that could have
+# failed and did not.
+std_level = "INFO"
+
+# The main process holds messages back this long and writes them sorted
+# by their time stamp, its own and those of the child processes. 0
+# switches the ordering off; messages are then written as they arrive.
+sort_window_ms = 100
+
+
+# Outputs. Every key except 'enabled' and 'path' is a parameter of
+# loguru's add() and is passed through unchanged; format, colorize,
+# rotation and retention are written as loguru expects them. At least
+# one output should be enabled, otherwise logdruid warns and writes to
+# the console anyway.
+
+[output.console]
+enabled = true
+# Colours: turn off when the output is piped into a file or read by
+# another program, otherwise escape sequences end up in it.
+colorize = true
+format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{process.name}</cyan> | <cyan>{name}</cyan>: <level>{message}</level>"
+# Values of variables in tracebacks; off in operation, as loguru advises.
+diagnose = false
+
+[output.file]
+enabled = false
+# A relative path is taken as relative to the working directory the
+# application was started from. Can be overridden with --log-file.
+path = "app.log"
+# Rotated at this size; this many rotated files are kept.
+rotation = "10 MB"
+retention = 5
+format = "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {process.name} | {name}: {message}"
+diagnose = false
+
+
+# Levels per process, by the name given when attaching the process, for
+# example:
+#
+# [processes.worker]
+# level = "TRACE"
+
+# Entries per name: the name of a logger of a library, or a module name
+# of this application. An entry applies to its name and everything below
+# it; a longer name takes precedence. 'level' sets the level, 'translate'
+# maps levels of the library to levels here, false drops them.
+
+# Example: a library whose DEBUG messages are lasting fine detail, not
+# debugging code, translated up to TRACE.
+[loggers.somelib]
+translate = { DEBUG = "TRACE" }
+
+# somelib.access writes one line per HTTP request on
+# INFO; translated down to TRACE to avoid flooding the regular log.
+[loggers."somelib.access"]
+translate = { INFO = "TRACE" }
