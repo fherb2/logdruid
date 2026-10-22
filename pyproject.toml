@@ -23,3 +23,8 @@ packages = [{ include = "logdruid", from = "src" }]
 [tool.poetry.group.dev.dependencies]
 tox = "^4.0"
 tox-gh = "^1.0"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.6"
+mkdocs-material = "^9.5"
+mkdocstrings = { version = ">=0.27", extras = ["python"] }

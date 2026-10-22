@@ -2,11 +2,9 @@
 
 ## Noch offen
 
-1. **Dokumentation entscheiden:** mkdocs (mit mkdocstrings) oder Sphinx.
-   Offener Punkt dabei: Das mkdocs-Ökosystem ist 2026 im Umbruch (Material
-   for MkDocs geht in den Wartungsmodus zugunsten des Nachfolgers
-   „Zensical", der noch Alpha ist) — vor einer Festlegung prüfen, ob das
-   noch aktuell ist.
+1. **GitHub Pages in den Repo-Settings aktivieren** (Settings → Pages →
+   Source: „GitHub Actions") — ohne das läuft `docs.yml` ins Leere. Vom
+   Entwickler per Hand zu erledigen, wie die Rulesets vorhin.
 
 2. **Ersten Release-Tag setzen** (`v0.1.0.dev1`), Trusted Publisher ist
    registriert.
@@ -68,3 +66,23 @@
 - PyPI-Konto: 2FA aktiviert, Trusted Publisher als „pending publisher"
   registriert (`logdruid`, Owner `fherb2`, `release.yml`, Environment
   `pypi`) — vom Entwickler selbst ausgeführt.
+- Neues Kapitel 1.4 in der Implementierungsdoku: Anforderungsskizze
+  „kritische Fehler samt Rückverfolgung erfassen", aus der
+  `Anwenderprojekt`-Sitzung
+  entnommen. Ausdrücklich als Anlehnung markiert, keine Vorgabe.
+- **Dokumentation: mkdocs gewählt**, trotz eines dabei gefundenen
+  gravierenden Befunds: MkDocs 1.x ist faktisch unbetreut (seit 18
+  Monaten kein Release, seit 2026-10-02 für externe Beiträge
+  geschlossen), MkDocs 2.0 bricht mit dem gesamten Plugin-Ökosystem
+  (inkl. `mkdocstrings`) ohne Migrationspfad, und der Nachfolger
+  Zensical hat `mkdocstrings` noch nicht bestätigt unterstützt.
+  Entscheidung: MkDocs unterhalb 2.0 anpinnen (`mkdocs-material` ≥9.7.5,
+  erweiterte Pflege laut Material-Team bis 2027-05-05), später auf
+  Zensical prüfen, wenn dessen `mkdocstrings`-Unterstützung reif ist.
+  `pyproject.toml` (Gruppe `docs`), `mkdocs.yml`, `docs/index.md`,
+  `docs/configuration.md` (bindet `examples/logdruid.toml` per Snippet
+  ein), `docs/api.md` (mkdocstrings) angelegt; `.github/workflows/docs.yml`
+  (Build + Deploy auf GitHub Pages über `actions/deploy-pages`).
+  `site/` in `.gitignore`. Ein Versions-Bug (`mkdocstrings` vs.
+  `mkdocstrings-python`) korrigiert, Build lokal verifiziert
+  (`poetry run mkdocs build --strict`, alle drei Seiten geprüft).
