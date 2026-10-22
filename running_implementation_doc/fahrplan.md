@@ -34,8 +34,11 @@
   auf oberster Ebene der Datei soll das ausdrücken; Anwenderdoku 5.3
   danach anpassen.
 - **Markdown-Dateien auf einen Absatz je Zeile umstellen** (globale
-  Regel): `implementierungsdoku.md`, `fahrplan.md`, `README.md`,
-  `docs/*.md`. `anwenderdoku.md` ist schon so geschrieben.
+  Regel): `implementierungsdoku.md`, `fahrplan.md`, `README.md`.
+  `anwenderdoku.md` ist schon so geschrieben. Nicht betroffen ist
+  `docs/*.md`: Dort gilt die bei mkdocs übliche Form, fester Umbruch bei
+  etwa 80 Zeichen (Entscheidung vom 2026-10-22, nach einer Stichprobe der
+  Quelltexte von MkDocs, Material for MkDocs und mkdocstrings).
 
 ## Vorgemerkt für ein späteres Release
 
@@ -123,3 +126,14 @@
   die Rückintegration. Ihre Beispiele sind geprüft: alle TOML-Blöcke ohne
   Warnung, das Beispiel aus 4.6 als Lauf, die Grenzen aus 5.3 und der
   Behelf mit `logger.catch` aus 7.2 an Proben beobachtet.
+- Korrekturen: Hinweis auf `--log-file` aus `examples/logdruid.toml`
+  entfernt; Implementierungsdoku 2.6 (logdruid liest die Kommandozeile
+  nicht) und Tabelle 2.8 (Zusatzfelder überleben die Weitergabe heute
+  nicht) berichtigt.
+- Englische Nutzerdoku für mkdocs aus `anwenderdoku.md` übertragen,
+  aufgeteilt auf Seiten in derselben Reihenfolge (`index.md` mit 1–2,
+  `how-it-works.md`, `integration.md`, `configuration.md`,
+  `libraries.md`, `exceptions.md`, `limitations.md`, `api.md` aus den
+  Docstrings). Geprüft: Build `--strict`, alle Sprunganker, TOML-Beispiele
+  ohne Warnung. Ohne Korrekturlesen durch den Entwickler veröffentlicht,
+  auf dessen Wunsch; Rückmeldungen kommen aus der Rückintegration.
