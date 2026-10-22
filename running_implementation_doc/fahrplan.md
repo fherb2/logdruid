@@ -11,7 +11,13 @@
 2. **Ersten Release-Tag setzen** (`v0.1.0.dev1`), Trusted Publisher ist
    registriert.
 
-3. **Rückintegration in `Anwenderprojekt`:** `dortiges Logging-Modul`
+3. **Kritische Fehler samt Rückverfolgung erfassen**, nach Kapitel 1.4 der
+   Implementierungsdoku: Anforderungen dort sind nur gesammelt, nicht
+   geplant — erst planen (eigener Planungsschritt), dann implementieren,
+   dann in der Anwenderdokumentation beschreiben, wie eine Nutzeranwendung
+   das Merkmal einbaut. Ergebnis: Version `0.1.0.dev2`.
+
+4. **Rückintegration in `Anwenderprojekt`:** `dortiges Logging-Modul`
    durch `pip install logdruid` (bzw. Eintrag in dessen
    Abhängigkeitsliste) ersetzen, alle `from Vorgängermodul import ...` auf
    `from logdruid import ...` umstellen, `Logging-Konfiguration` zu

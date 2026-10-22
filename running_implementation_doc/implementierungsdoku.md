@@ -51,6 +51,139 @@ Alles, was logdruid betrifft, steht in einer eigenen Datei neben der
 Anwendungskonfiguration, nicht in ihr (Begründung: 2.6). Ein Beispiel mit
 Erläuterungen zu jedem Abschnitt liegt unter `examples/logdruid.toml`.
 
+## 1.4 Neues Feature in der Weiterentwicklung: kritische Fehler und ihre Rückverfolgung zuverlässig erfassen
+
+**Hinweis zum Status dieses Kapitels:** Es sammelt nur Anforderungen und
+Rechercheergebnisse aus einer Diskussion in dem Anwenderprojekt, für das
+logdruid ursprünglich ausgegründet wurde (dort als `Vorgängermodul`,
+Projekt `Anwenderprojekt`, Sitzung). Es ist **kein Plan und keine Vorgabe** — alles
+Folgende ist Anlehnung, nicht gesetzter Fakt. Die konkrete Gestalt der
+logdruid-API dafür, einschließlich Namen und Umfang, entsteht erst in
+einer eigenen Planung, wenn dieses Kapitel umgesetzt wird (vorgesehen
+als Fahrplan-Schritt zwischen den heutigen Schritten 2 und 3, Ergebnis
+dann Version `dev2`).
+
+### Der Anlass
+
+Im Anwenderprojekt zeigten sich beim Herunterfahren zwei Lücken, die
+`Vorgängermodul`/logdruid heute nicht schließt:
+
+1. **Eine unerwartete, nicht abgefangene Ausnahme in einem Kindprozess
+   geht am Logging vorbei.** Pythons `multiprocessing` schreibt sie
+   selbst, direkt nach `stderr` (`Process <Name>:` plus Rückverfolgung;
+   belegt im Quelltext von `multiprocessing/process.py`, `_bootstrap`,
+   Python 3.12) — ungeordnet zwischen den übrigen Log-Zeilen, in
+   falschem Format, nicht in der Logdatei. Weder `sys.excepthook` noch
+   `threading.excepthook` greift für einen solchen Kindprozess; beide
+   sind für den Hauptthread bzw. andere Threads im selben Prozess
+   gedacht.
+2. **Selbst wenn eine kritische Meldung den Weg ins Log findet, stehen
+   danach noch die Meldungen des geordneten Herunterfahrens** — die
+   Rückverfolgung ist dann nicht mehr die letzte, am leichtesten
+   auffindbare Zeile.
+
+### Was zur Bedeutung von `CRITICAL` recherchiert wurde
+
+Festgehalten, weil es die spätere Planung begründen soll, nicht als
+bereits getroffene Festlegung für logdruid:
+
+- In Pythons `logging` und in loguru ist `CRITICAL` (50) die höchste
+  Stufe: „a serious error, indicating that the program itself may be
+  unable to continue running" (Python Logging HOWTO). `ERROR` (40)
+  bedeutet dagegen: eine Funktion ist gescheitert, die Arbeit geht
+  sonst weiter.
+- Sowohl `logging.exception()`/`logger.exception()` als auch loguru
+  `logger.catch()` melden als Vorgabe auf `ERROR`, nicht auf
+  `CRITICAL` — wer `CRITICAL` für „dieser Prozess gibt auf" reservieren
+  will, muss das selbst so festlegen, es ergibt sich nicht von selbst
+  aus den Standard-Werkzeugen.
+- Andere Systeme zum Vergleich: syslog (RFC 5424) kennt über „Error"
+  noch drei weitere Stufen (Critical, Alert, Emergency), Pythons
+  `SysLogHandler` bildet `CRITICAL` aber immer nur auf „critical" ab.
+  Log4j hat ein eigenes `FATAL` über `ERROR` („should be used
+  sparingly"), SLF4J dagegen keines. Go kennt `log.Fatal` nicht als
+  Stufe, sondern als Handlung (melden, dann `os.Exit(1)`).
+- Drei Arten, wie ein Prozess endet, und was davon heute im Log
+  ankommt:
+  - **Geordnete Kapitulation** — die Anwendung erkennt selbst, dass es
+    nicht weitergeht, meldet und beendet sich mit einem Exit-Code
+    ungleich 0 (Vorbild: gunicorn meldet einen nicht startenden Worker
+    auf `ERROR` mit eigenem Exit-Code, einen hängenden Worker auf
+    `CRITICAL`).
+  - **Nicht abgefangene Ausnahme, kein `try`** — je nach Ort ein anderer
+    Mechanismus zuständig (Hauptthread: `sys.excepthook`; andere
+    Threads: `threading.excepthook`, beide austauschbar und beide als
+    Vorgabe auf `stderr`; Kindprozesse von `multiprocessing`: keiner
+    von beiden, siehe oben). `SystemExit` bleibt in allen drei Fällen
+    still.
+  - **Harter Tod** — ein Absturz in nativem Code (`SIGSEGV`, `SIGFPE`,
+    `SIGABRT`, `SIGBUS`, `SIGILL`) ließe sich über das Modul
+    `faulthandler` noch als Python-Rückverfolgung auffangen, aber nur
+    nach `stderr` oder in eine offene Datei, nicht über `logging` (der
+    Signalhandler darf nur signalsichere Funktionen nutzen). Bei
+    `SIGKILL` oder dem OOM-Killer geht im Prozess selbst gar nichts
+    mehr; melden kann das nur ein übergeordneter Prozess (Vorbild:
+    gunicorns Hauptprozess meldet „Worker (pid:…) was sent SIGKILL!
+    Perhaps out of memory?" auf `ERROR`).
+- **Die Idee für einen Abschlussbericht** lehnt sich an Kubernetes an:
+  Ein Container kann eine kurze Abschlussnachricht nach
+  `/dev/termination-log` schreiben; mit
+  `terminationMessagePolicy: FallbackToLogsOnError` nimmt Kubernetes bei
+  einem Fehlerende ersatzweise das Ende des eigentlichen Logs als
+  Abschlussmeldung. Übertragen auf logdruid: Die `CRITICAL`-Meldungen
+  eines Laufs am Ende noch einmal wiederholen, als letzte, am leichtesten
+  auffindbare Zeilen.
+
+### Erste, unverbindliche Ansätze aus dem Anwenderprojekt
+
+Diese Ansätze wurden dort für `Vorgängermodul` skizziert, und zwar an
+Stellen, die dort projektspezifisch benannt sind (eigene Prozessfunktionen,
+Startskript). Für logdruid muss erst entschieden werden, welcher Teil
+davon als generische API gehört und welcher Teil Sache der einbindenden
+Anwendung bleibt:
+
+- Eine Prozessfunktion eines Kindprozesses ließe sich mit einem
+  `logger.catch`-artigen Dekorator auf Stufe `CRITICAL` umschließen: Er
+  fängt jede nicht abgefangene Ausnahme, schreibt sie mit
+  Rückverfolgung über die Pipe ins Log und beendet den Prozess mit
+  Exit-Code 1 — ein `SystemExit` mit einer Zahl bleibt dabei auf
+  `stderr` still, Python druckt die Ausnahme dann nicht ein zweites Mal.
+  Offen: Bietet logdruid dafür selbst einen Dekorator oder eine
+  Hilfsfunktion an (Teil der öffentlichen API), oder bleibt das
+  Anwendungscode, der nur `logger` und die vorhandenen Bausteine nutzt?
+- Der `main`-Prozess könnte sich jede `CRITICAL`-Meldung jedes Prozesses
+  merken, mit Rückverfolgung, und sie bei `shutdown()` am Ende noch
+  einmal ausgeben, unter einer Überschrift (im Anwenderprojekt
+  angedacht: ein- und ausschaltbar über einen Konfigurationsschalter,
+  Vorgabe an). Name des Schalters und Wortlaut der Überschrift waren
+  dort selbst noch nicht entschieden.
+- Ein Kindprozess, der ohne eigene Meldung endet (`SIGKILL`, Absturz in
+  nativem Code), hat keine Rückverfolgung beizutragen; die einbindende
+  Anwendung (dort: der main-Prozess) bemerkt das Ende trotzdem und
+  könnte es selbst auf `CRITICAL` melden, damit auch das im
+  Abschlussbericht erscheint. Ob und wie logdruid dafür eine
+  Schnittstelle anbietet, ist offen.
+- `faulthandler` für native Abstürze wurde nur als Idee notiert: seine
+  Ausgabe kann nicht über `logging`/loguru laufen, allenfalls in eine
+  eigene Datei oder nach `stderr`, deren Inhalt eine Anwendung später
+  selbst ins Log übernehmen könnte.
+
+### Was zur Version `dev2` gehört
+
+Laut Auftrag: die Umsetzung dessen, was aus diesem Kapitel in der
+eigentlichen Planung wird, **und** seine Beschreibung in der
+Anwenderdokumentation — wie eine Nutzeranwendung dieses Merkmal
+einzubauen hat (vergleichbar mit der Beschreibung von `setup`/`link`/
+`attach`/`shutdown` in 1.1).
+
+Quellen der Recherche im Anwenderprojekt, dort abgerufen: Python Logging
+HOWTO; CPython-Quelltext `logging/__init__.py`, `logging/handlers.py`,
+`multiprocessing/process.py` (3.12); Python-Doku zu `sys`, `threading`,
+`faulthandler`; loguru-API; RFC 5424 §6.2.1; Quelltext von gunicorn
+(`arbiter.py`) und uvicorn (`config.py`, `logging.py`); Kubernetes-Doku
+„Determine the Reason for Pod Failure"; Log4j-Doku zu eigenen Stufen;
+SLF4J-FAQ; Go-Doku zu `log`.
+
 # 2 Vorgaben
 
 Dieses Segment enthält die projektweiten, prüfbaren Festlegungen zu logdruid.
