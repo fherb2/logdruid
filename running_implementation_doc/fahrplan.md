@@ -2,21 +2,19 @@
 
 ## Noch offen
 
-1. **Ersten Release-Tag setzen** (`v0.1.0.dev1`), Trusted Publisher ist
-   registriert, GitHub Pages aktiviert — nichts Technisches steht mehr
-   im Weg.
-
-2. **Rückintegration in `Anwenderprojekt`:** `dortiges Logging-Modul`
-   durch `pip install logdruid` (bzw. Eintrag in dessen
-   Abhängigkeitsliste) ersetzen, alle `from Vorgängermodul import ...` auf
-   `from logdruid import ...` umstellen, `Logging-Konfiguration` zu
+1. **Rückintegration in `Anwenderprojekt`** — *läuft gerade in
+   einer anderen Sitzung/Instanz dort, nicht hier.* Diese Sitzung wartet,
+   bis dort Anpassungsbedarf an logdruid gemeldet wird. Dort:
+   `dortiges Logging-Modul` durch `pip install logdruid` (bzw. Eintrag in
+   dessen Abhängigkeitsliste) ersetzen, alle `from Vorgängermodul import ...`
+   auf `from logdruid import ...` umstellen, `Logging-Konfiguration` zu
    `logdruid.toml` umbenennen, Segment 2.23 und 3.3.9 dort durch
    Querverweis auf dieses Repository ersetzen. Die deutsche
    Implementierungsdoku von logdruid dient dabei als Anleitung. Dabei
-   gefundene Unzulänglichkeiten werden hier behoben.
+   gefundene Unzulänglichkeiten werden hier (in logdruid) behoben.
 
-3. **Danach: finale Version `0.1.0` veröffentlichen** (Tag + Release),
-   sobald Schritt 2 sauber durchlief.
+2. **Danach: finale Version `0.1.0` veröffentlichen** (Tag + Release),
+   sobald Schritt 1 sauber durchlief.
 
 ## Zurückgestellt, kein fester Platz mehr vor `0.1.0`
 
@@ -91,3 +89,8 @@
   (`poetry run mkdocs build --strict`, alle drei Seiten geprüft).
 - GitHub Pages aktiviert (Settings → Pages → Source: „GitHub Actions") —
   vom Entwickler selbst ausgeführt.
+- Tag-Ruleset blockierte zunächst jeden Tag-Push, auch den des Owners
+  (Bypass-Liste war leer); Bypass für den Entwickler ergänzt.
+- Erster Release-Tag `v0.1.0.dev1` gesetzt und gepusht. `Release`-Workflow
+  erfolgreich durchgelaufen; `logdruid` 0.1.0.dev1 ist auf PyPI
+  veröffentlicht (über die PyPI-API verifiziert).
