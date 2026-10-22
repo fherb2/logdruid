@@ -18,7 +18,7 @@ a limitation of this version, which an upcoming version will remove:
 
 - In the main thread, Python writes it to `stderr` through
   `sys.excepthook`, in other threads through `threading.excepthook`.
-- In a child process, `multiprocessing` itself writes "Process <name>:" and
+- In a child process, `multiprocessing` itself writes `Process <name>:` and
   the traceback directly to `stderr`: unordered, not in the output's format
   and not into the file.
 
@@ -36,7 +36,7 @@ def worker(link, ...):
     ...
 ```
 
-Tested with version 0.1.0.dev1, `spawn` and Linux: the exception appears with
+Tested with `spawn` on Linux: the exception appears with
 its traceback as a `CRITICAL` message of the child process, in order, in the
 output; the process ends with exit code 1, and `multiprocessing` writes
 nothing extra to `stderr`. Without `onerror`, the exception is reported just
@@ -63,6 +63,10 @@ child process ended is seen only by the `main` process, for example from
 
 If a child process breaks off in the middle of writing a message, half a
 message remains in the pipe. The `main` process then gives up this pipe and
-warns "Logging pipe of <name> broke off (…); later messages of that process
-are lost". The other pipes are not affected. One possible cause is `SIGINT`
-from Ctrl+C ([section 4.3](integration.md#43-in-the-child-process)).
+warns under the name `logdruid`
+([section 5.7](configuration.md#57-mistakes-in-the-configuration)):
+
+`Logging pipe of <name> broke off (…); later messages of that process are lost`
+
+The other pipes are not affected. One possible cause is `SIGINT` from
+Ctrl+C ([section 4.3](integration.md#43-in-the-child-process)).

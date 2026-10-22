@@ -11,10 +11,9 @@ Without a path, logdruid looks for a file named `logdruid.toml` in the
 directory of the application's entry point
 (`sys.modules["__main__"].__file__`), not in the working directory. If the
 application has no entry point as a file, as with `python -c`, logdruid looks
-for nothing and warns. If the application is started through an entry point
-of a package (`[project.scripts]`), `__main__` is presumably the start script
-generated for it in the environment's `bin` folder (not verified); there is
-no `logdruid.toml` there, so such applications pass the path explicitly.
+for nothing and warns. If the application is installed as a package and
+started through an entry point (`[project.scripts]`), it passes the path
+explicitly.
 
 If the file is missing or cannot be read, logdruid warns and carries on with
 what the application has passed and with its own defaults. Child processes
@@ -224,14 +223,25 @@ switches the ordering off.
 
 A mistake in the configuration never stops the application. logdruid skips
 the faulty value, works with the rest and reports each mistake as a warning
-of the `main` process as soon as an output exists; the warnings are thus also
-in the log file. Only valid values reach loguru.
+as soon as an output exists. Only valid values reach loguru.
 
 Warnings arise for: a missing, unreadable or faulty file, an unknown key, an
 unknown level name, an unknown or disallowed key of an output, a file output
 without `path`, no enabled output, an output that cannot be created, an
 invalid `sort_window_ms`, and an invalid translation
 ([section 6](libraries.md)).
+
+**How to recognise logdruid's warnings.** They are on level `WARNING` under
+the name `logdruid` (the `{name}` field in the format) and carry the process
+name of the `main` process. The minimum levels from
+[section 5.4](#54-minimum-levels-per-process-and-per-name) and
+[5.5](#55-four-layers) do not apply to them: they appear with
+`std_level = "ERROR"`, with `cli_level`, or with a `[loggers.logdruid]`
+entry, in every enabled output. They are written at once, without the time
+window from [section 3](how-it-works.md). The same holds for the warnings
+logdruid issues about the transport while running
+([section 4.5](integration.md#45-shutting-down) and
+[7.4](exceptions.md#74-an-interrupted-transfer)).
 
 ## 5.8 A complete file
 
@@ -269,3 +279,31 @@ translate = { DEBUG = "TRACE" }
 
 A version with more comments is in the repository at
 [`examples/logdruid.toml`](https://github.com/fherb2/logdruid/blob/main/examples/logdruid.toml).
+
+## 5.9 Checking a configuration
+
+Whether a configuration is free of mistakes can be checked without setting
+anything up, for example in a test of the application or in its CI:
+
+```python
+import unittest
+from pathlib import Path
+
+import logdruid
+
+
+class LoggingConfigTest(unittest.TestCase):
+
+    def test_the_shipped_configuration_has_no_mistakes(self):
+        path = Path(__file__).parent.parent / "myapp" / "logdruid.toml"
+        self.assertEqual(logdruid.check_config(path), [])
+```
+
+`logdruid.check_config()` takes the same configuration parameters as
+`setup()` – `config_path`, `defaults`, `cli_level`, `cli_log_file` – and
+resolves the same four layers ([section 5.5](#55-four-layers)). It returns
+the list of warnings `setup()` would report, empty for a configuration
+without mistakes. It creates no output and changes nothing on the logger.
+That is why it cannot tell whether an output can actually be created, for
+example whether the path of the log file is writable; only `setup()` shows
+that.

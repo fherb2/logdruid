@@ -44,7 +44,8 @@ name of the `main` process in its messages, the default is `main`.
 - It registers `shutdown()` with `atexit`
   ([section 4.5](#45-shutting-down)).
 - Last, it reports problems in the configuration as warnings, as soon as an
-  output exists.
+  output exists
+  ([section 5.7](configuration.md#57-mistakes-in-the-configuration)).
 
 Whatever is reported before `setup()` still goes through loguru's default
 output to `stderr`.

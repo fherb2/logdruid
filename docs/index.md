@@ -2,7 +2,7 @@
 
 A drop-in logging setup layer for multi-process applications, built on
 [loguru](https://loguru.readthedocs.io/). This documentation describes
-version 0.1.0.dev2.
+version 0.1.0.dev3.
 
 ## 1 What logdruid is for
 
@@ -64,6 +64,15 @@ logdruid is tested and released for child processes started with the `spawn`
 start method (`multiprocessing.get_context("spawn")`). It is not tested with
 `fork`; a release for it follows in a later version. It is tested on Linux
 with Python 3.11, 3.12 and 3.13.
+
+**Versions and stability.** Version numbers follow Semantic Versioning. The
+releases before `0.1.0` are development releases (`0.1.0.devN`); until then
+anything may still change, the interface as well as the format of the
+configuration file. From `0.1.0` on, as long as the first number is `0`, a
+new second number announces a change that existing applications have to
+adapt to; a new third number breaks nothing. Which names belong to the
+interface is listed at the top of the [API reference](api.md); every change
+to it and to the file format is in the [changelog](changelog.md).
 
 The following pages build on each other in the order of the navigation: each
 one only assumes what the pages before it explain.
