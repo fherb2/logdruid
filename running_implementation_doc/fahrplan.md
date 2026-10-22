@@ -2,6 +2,10 @@
 
 ## Noch offen
 
+0. **`0.1.0.dev1` und `0.1.0.dev2` auf PyPI löschen** — vom Entwickler per
+   Hand, sobald `0.1.0.dev3` dort ist. Ihre Metadaten tragen noch die
+   frühere Autorenangabe samt Adresse.
+
 1. **Rückintegration in das Anwenderprojekt, aus dem logdruid
    ausgegründet wurde** — *läuft gerade in einer anderen Sitzung/Instanz
    dort, nicht hier.* Diese Sitzung wartet, bis dort Anpassungsbedarf an
@@ -146,3 +150,22 @@
 - `0.1.0.dev2` veröffentlicht: gleicher Code wie `dev1`, bringt die neue
   README nach PyPI. `pip install logdruid` nimmt die Dev-Version, solange
   es keine stabile gibt (mit `pip download` geprüft).
+- **Persönliche Angaben und Namen des Anwenderprojekts aus der gesamten
+  Historie entfernt** (2026-10-22), mit `git-filter-repo` 2.47.0 in zwei
+  Durchgängen: in jeder früheren Fassung jeder Datei, in Commit- und
+  Tag-Nachrichten und in Autor, Committer und Tagger. Ersetzt: die
+  Adresse durch die noreply-Adresse von GitHub, der Name durch `fherb2`
+  bzw. `github.com/fherb2` (`pyproject.toml`, `LICENSE`), Namen und Pfade
+  des Anwenderprojekts durch neutrale Wörter. Danach `main` und die Tags
+  mit Force gepusht (Bypass im Ruleset vorübergehend), die alten
+  Workflow-Läufe gelöscht. In `.git/config` stehen jetzt `user.name =
+  fherb2` und die noreply-Adresse; diese Datei wird nicht versioniert,
+  auf einem anderen Rechner also nach dem Klonen neu setzen. Alte Klone
+  der früheren Historie nicht mehr verwenden.
+- **`0.1.0.dev3`**: `check_config()`; die eigenen Warnungen heißen
+  `logdruid` und unterliegen keiner Mindeststufe; `Settings` nicht mehr
+  öffentlich; öffentliche Schnittstelle und Stabilität in 2.9 festgelegt
+  und durch `tests/test_api.py` geprüft; Doku-Fehler aus der Rückmeldung
+  der Rückintegration behoben (L1–L5); `CHANGELOG.md`; Projekt-Links und
+  feste Kategorien in den Metadaten; README ohne Verweis auf die
+  internen Arbeitsdokumente.
