@@ -2,7 +2,8 @@ name: Tests
 
 on:
   push:
-    branches: ["**"]
+    # The management branch carries only shared configuration, no code.
+    branches-ignore: ["repo-management"]
   pull_request:
 
 jobs:

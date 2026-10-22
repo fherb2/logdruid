@@ -5,6 +5,7 @@ __pycache__/
 build/
 dist/
 .venv/
+.venv-poetry/
 venv/
 .pytest_cache/
 .tox/
@@ -13,3 +14,4 @@ venv/
 .coverage
 htmlcov/
 site/
+.vscode/
