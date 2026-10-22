@@ -54,19 +54,17 @@ Erläuterungen zu jedem Abschnitt liegt unter `examples/logdruid.toml`.
 ## 1.4 Neues Feature in der Weiterentwicklung: kritische Fehler und ihre Rückverfolgung zuverlässig erfassen
 
 **Hinweis zum Status dieses Kapitels:** Es sammelt nur Anforderungen und
-Rechercheergebnisse aus einer Diskussion in dem Anwenderprojekt, für das
-logdruid ursprünglich ausgegründet wurde (dort als `Vorgängermodul`,
-Projekt `Anwenderprojekt`, Sitzung). Es ist **kein Plan und keine Vorgabe** — alles
+Rechercheergebnisse aus einer Diskussion in dem Anwenderprojekt, aus dem
+logdruid ausgegründet wurde. Es ist **kein Plan und keine Vorgabe** — alles
 Folgende ist Anlehnung, nicht gesetzter Fakt. Die konkrete Gestalt der
 logdruid-API dafür, einschließlich Namen und Umfang, entsteht erst in
-einer eigenen Planung, wenn dieses Kapitel umgesetzt wird (vorgesehen
-als Fahrplan-Schritt zwischen den heutigen Schritten 2 und 3, Ergebnis
-dann Version `dev2`).
+einer eigenen Planung, wenn dieses Kapitel umgesetzt wird (zurückgestellt
+bis nach `0.1.0`, siehe Fahrplan).
 
 ### Der Anlass
 
 Im Anwenderprojekt zeigten sich beim Herunterfahren zwei Lücken, die
-`Vorgängermodul`/logdruid heute nicht schließt:
+logdruid heute nicht schließt:
 
 1. **Eine unerwartete, nicht abgefangene Ausnahme in einem Kindprozess
    geht am Logging vorbei.** Pythons `multiprocessing` schreibt sie
@@ -136,9 +134,10 @@ bereits getroffene Festlegung für logdruid:
 
 ### Erste, unverbindliche Ansätze aus dem Anwenderprojekt
 
-Diese Ansätze wurden dort für `Vorgängermodul` skizziert, und zwar an
-Stellen, die dort projektspezifisch benannt sind (eigene Prozessfunktionen,
-Startskript). Für logdruid muss erst entschieden werden, welcher Teil
+Diese Ansätze wurden dort für den Vorgänger von logdruid skizziert, und
+zwar an Stellen, die dort projektspezifisch sind (eigene
+Prozessfunktionen, das Startskript der Anwendung). Für logdruid muss erst
+entschieden werden, welcher Teil
 davon als generische API gehört und welcher Teil Sache der einbindenden
 Anwendung bleibt:
 
@@ -476,7 +475,7 @@ eigene Datei mit Drehung.
 
 ### 3.1.2 Herkunft
 
-Übernommen aus dem Projekt `Anwenderprojekt`, Commit
-`f69672f9c6c39cd2291424dc2b11ab8bcd6685ce`, aus `dortiges Logging-Modul` und
-`dortige Logging-Konfiguration`. Die Historie wurde nicht mitgenommen; der erste
-Commit dieses Repositories nennt Herkunft und Commit-Hash.
+Übernommen aus dem Anwenderprojekt, aus dem logdruid ausgegründet wurde,
+Stand von Commit `f69672f9c6c39cd2291424dc2b11ab8bcd6685ce`: dessen
+Logging-Modul und seine Konfigurationsdatei. Die Historie wurde nicht
+mitgenommen; der erste Commit dieses Repositories nennt den Quellstand.

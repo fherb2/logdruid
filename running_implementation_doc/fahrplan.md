@@ -2,16 +2,15 @@
 
 ## Noch offen
 
-1. **Rückintegration in `Anwenderprojekt`** — *läuft gerade in
-   einer anderen Sitzung/Instanz dort, nicht hier.* Diese Sitzung wartet,
-   bis dort Anpassungsbedarf an logdruid gemeldet wird. Dort:
-   `dortiges Logging-Modul` durch `pip install logdruid` (bzw. Eintrag in
-   dessen Abhängigkeitsliste) ersetzen, alle `from Vorgängermodul import ...`
-   auf `from logdruid import ...` umstellen, `Logging-Konfiguration` zu
-   `logdruid.toml` umbenennen, Segment 2.23 und 3.3.9 dort durch
-   Querverweis auf dieses Repository ersetzen. Als Anleitung dient die
-   deutsche Anwenderdoku `running_implementation_doc/anwenderdoku.md`.
-   Dabei gefundene Unzulänglichkeiten werden hier (in logdruid) behoben.
+1. **Rückintegration in das Anwenderprojekt, aus dem logdruid
+   ausgegründet wurde** — *läuft gerade in einer anderen Sitzung/Instanz
+   dort, nicht hier.* Diese Sitzung wartet, bis dort Anpassungsbedarf an
+   logdruid gemeldet wird. Dort wird das bisherige Logging-Modul durch
+   logdruid aus PyPI ersetzt; Importe und Konfigurationsdatei werden
+   umgestellt, und die dortige Doku verweist auf dieses Repository. Als
+   Anleitung dient die deutsche Anwenderdoku
+   `running_implementation_doc/anwenderdoku.md`. Dabei gefundene
+   Unzulänglichkeiten werden hier (in logdruid) behoben.
 
 2. **Danach: finale Version `0.1.0` veröffentlichen** (Tag + Release),
    sobald Schritt 1 sauber durchlief.
@@ -56,10 +55,11 @@
 
 - GitHub-Repo `logdruid` angelegt (public, Rulesets für `main` und `v*`).
 - Lokaler Clone unter `~/git/logdruid`.
-- Übernahme von `Logging-Modul`, `Logging-Konfiguration`, `test_logging.py`,
-  `logging_scenarios.py` sowie der Klassen `LoggingLayersTest` und
-  `LoggingConfigWarningsTest` aus `dortige Testdatei`, umbenannt auf `logdruid`
-  und von projektinternen Verweisen bereinigt.
+- Übernahme des Logging-Moduls und seiner Konfigurationsdatei aus dem
+  Anwenderprojekt, dazu `test_logging.py`, `logging_scenarios.py` und die
+  Klassen `LoggingLayersTest` und `LoggingConfigWarningsTest` aus einer
+  weiteren Testdatei; umbenannt auf `logdruid` und von projektinternen
+  Verweisen bereinigt.
 - Implementierungsdoku (Segmente 1–3 in einer Datei) geschrieben.
 - `src/logdruid/__init__.py` auf reinen Re-Export reduziert, Implementierung
   nach `src/logdruid/logdruid.py` verschoben; `tests/test_config.py` darauf
@@ -80,7 +80,7 @@
 - Testlauf verifiziert: alle 26 Tests (`test_logging.py`, `test_config.py`)
   grün im Poetry-venv.
 - Commit-Modus für diese Sitzung geklärt: `direct` auf `main`.
-- Erster Commit (`0dde9f3`), gepusht nach `origin/main`.
+- Erster Commit, gepusht nach `origin/main`.
 - Version auf `0.1.0.dev1` gesetzt (PEP 440, kanonisch — `0.1.0dev1` wäre
   äquivalent normalisiert worden).
 - CI aufgesetzt: `.github/workflows/tests.yml` (Matrix `py311`–`py313`
@@ -96,9 +96,9 @@
   registriert (`logdruid`, Owner `fherb2`, `release.yml`, Environment
   `pypi`) — vom Entwickler selbst ausgeführt.
 - Neues Kapitel 1.4 in der Implementierungsdoku: Anforderungsskizze
-  „kritische Fehler samt Rückverfolgung erfassen", aus der
-  `Anwenderprojekt`-Sitzung
-  entnommen. Ausdrücklich als Anlehnung markiert, keine Vorgabe.
+  „kritische Fehler samt Rückverfolgung erfassen", aus einer Sitzung im
+  Anwenderprojekt entnommen. Ausdrücklich als Anlehnung markiert, keine
+  Vorgabe.
 - **Dokumentation: mkdocs gewählt**, trotz eines dabei gefundenen
   gravierenden Befunds: MkDocs 1.x ist faktisch unbetreut (seit 18
   Monaten kein Release, seit 2026-10-02 für externe Beiträge
