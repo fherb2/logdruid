@@ -14,9 +14,9 @@
    und den englischen Seiten entfernen.
 
 2. **`0.2.0.dev1` beginnen**, nach `0.1.1`, damit ein Zweig reicht:
-   1. Zu Beginn die deutsche Implementierungsdoku auf einen Absatz je
-      Zeile umstellen (globale Regel): `implementierungsdoku.md` und
-      `fahrplan.md`. Ohne inhaltliche Wirkung. Nicht betroffen sind
+   1. Zu Beginn auf einen Absatz je Zeile umstellen (globale Regel):
+      `implementierungsdoku.md`, `fahrplan.md` und `README.md`. Ohne
+      inhaltliche Wirkung. Nicht betroffen sind
       `anwenderdoku.md` (schon so geschrieben) und `docs/*.md` (bei mkdocs
       übliche Form, fester Umbruch bei etwa 80 Zeichen; Entscheidung vom
       2026-10-22 nach einer Stichprobe von MkDocs, Material for MkDocs und
