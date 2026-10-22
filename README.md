@@ -6,8 +6,7 @@
 A drop-in logging setup layer for multi-process applications, built on
 [loguru](https://loguru.readthedocs.io/).
 
-**Installation, usage, configuration and API:
-<https://fherb2.github.io/logdruid/>**
+**[Documentation](https://fherb2.github.io/logdruid/)** – installation, usage, configuration and API.
 
 ## What it is for
 
@@ -47,12 +46,11 @@ through `logging`.
 | Configuration from a file, precedence defaults < application < file < command line | no, only environment variables | yes |
 | Mistakes in the configuration do not stop the application | no | yes, they only produce a warning |
 
-## For contributors
+## Documentation
 
-Design rules and rationale are in
-[`running_implementation_doc/`](https://github.com/fherb2/logdruid/tree/main/running_implementation_doc)
-(in German).
+Installation, usage, configuration, the API reference and the changelog:
+<https://fherb2.github.io/logdruid/>
 
 ## License
 
-MIT, see [`LICENSE`](https://github.com/fherb2/logdruid/blob/main/LICENSE).
+MIT, see [LICENSE](https://github.com/fherb2/logdruid/blob/main/LICENSE).
