@@ -21,9 +21,9 @@ SCENARIO_TIMEOUT_S = 60
 LINE_FORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSSSSS}|{level}|{process.name}|{name}|{message}"
 LINE = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6})\|(\w+)\|(\w+)\|([\w.]+)\|(.*)$")
 
-# Configuration written for each scenario; EXTRA, STD_LEVEL and WINDOW_MS
-# are replaced. The translation applies to the logger lib and everything
-# below it.
+# Configuration written for each scenario; EXTRA, STD_LEVEL, WINDOW_MS and
+# LINE_FORMAT are replaced. The translation applies to the logger lib and
+# everything below it.
 CONF_TEMPLATE = """
 EXTRA
 std_level = "STD_LEVEL"
@@ -36,11 +36,11 @@ format = "LINE_FORMAT"
 
 [loggers.lib]
 translate = { DEBUG = "TRACE", INFO = false }
-""".replace("LINE_FORMAT", LINE_FORMAT)
+"""
 
 
 def run_scenario(name: str, window_ms: int = 100, std_level: str = "INFO",
-                 extra: str = ""):
+                 extra: str = "", line_format: str = LINE_FORMAT):
     """Run one scenario; return its output and its exit code.
 
     extra is put at the top of the configuration, for keys of its own.
@@ -49,7 +49,8 @@ def run_scenario(name: str, window_ms: int = 100, std_level: str = "INFO",
         conf = Path(tmp) / "logdruid.toml"
         conf.write_text(CONF_TEMPLATE.replace("EXTRA", extra)
                         .replace("STD_LEVEL", std_level)
-                        .replace("WINDOW_MS", str(window_ms)))
+                        .replace("WINDOW_MS", str(window_ms))
+                        .replace("LINE_FORMAT", line_format))
         result = subprocess.run(
             [sys.executable, "-c",
              "import logging_scenarios; logging_scenarios.run()",
@@ -159,6 +160,43 @@ class OwnWarningTest(unittest.TestCase):
                     if line[1] == "WARNING" and line[3] == "logdruid"]
         self.assertEqual(len(warnings), 1, output)
         self.assertIn("colour", warnings[0][4])
+
+
+# Format of FieldsTest: the fields that once got lost on the way.
+FIELDS_FORMAT = ("{level}|{process.name}|{thread.name}|{file.name}|"
+                 "{elapsed}|{extra}|{message}")
+
+
+class FieldsTest(unittest.TestCase):
+    """Every field of loguru arrives as the reporting process set it."""
+
+    def setUp(self):
+        output, code = run_scenario("fields", line_format=FIELDS_FORMAT)
+        self.assertEqual(code, 0, output)
+        self.output = output
+        rows = [line.split("|", 6) for line in output.splitlines()]
+        self.lines = {row[6]: row for row in rows if len(row) == 7}
+
+    def test_bound_values_arrive_from_both_processes(self):
+        self.assertIn("'user': 'main'", self.lines["main fields"][5])
+        self.assertIn("'user': 'child'", self.lines["child fields"][5])
+
+    def test_a_value_that_cannot_be_pickled_arrives_as_text(self):
+        extra = self.lines["child fields"][5]
+        self.assertIn("'lock': '<unlocked _thread.lock object", extra,
+                      self.output)
+
+    def test_file_and_thread_are_those_of_the_call(self):
+        for message in ("main fields", "child fields"):
+            row = self.lines[message]
+            self.assertEqual(row[2], "MainThread", self.output)
+            self.assertEqual(row[3], "logging_scenarios.py", self.output)
+
+    def test_elapsed_is_that_of_the_reporting_process(self):
+        row = next(row for message, row in self.lines.items()
+                   if message.startswith("child elapsed "))
+        self.assertEqual(row[4], row[6].removeprefix("child elapsed "),
+                         self.output)
 
 
 if __name__ == "__main__":

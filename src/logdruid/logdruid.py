@@ -11,6 +11,8 @@ import inspect
 import itertools
 import logging
 import multiprocessing as mp
+import os
+import pickle
 import sys
 import threading
 import time
@@ -565,19 +567,40 @@ def _own_name(record: Dict[str, Any]) -> None:
 
 
 def _to_item(message) -> Dict[str, Any]:
-    """What travels for one message: its data, not loguru's objects."""
+    """What travels for one message: its data, not loguru's objects.
+
+    The file travels as its path only; its name is derived again on
+    writing, as loguru derives it.
+    """
     record = message.record
     return {
         "time": record["time"],
+        "elapsed": record["elapsed"],
         "level": record["level"].name,
         "process": record["process"].name,
         "pid": record["process"].id,
+        "thread": record["thread"].name,
+        "tid": record["thread"].id,
         "name": record["name"],
         "module": record["module"],
         "function": record["function"],
+        "file": record["file"].path,
         "line": record["line"],
+        "extra": dict(record["extra"]),
         "text": str(message).rstrip("\n"),
     }
+
+
+def _picklable_extra(extra: Dict[str, Any]) -> Dict[str, Any]:
+    """Extra values for the pipe: each that cannot be pickled as str()."""
+    result = {}
+    for key, value in extra.items():
+        try:
+            pickle.dumps(value)
+        except Exception:
+            value = str(value)
+        result[key] = value
+    return result
 
 
 class _PipeSink:
@@ -591,7 +614,16 @@ class _PipeSink:
         self._conn = conn
 
     def __call__(self, message) -> None:
-        self._conn.send(_to_item(message))
+        item = _to_item(message)
+        try:
+            self._conn.send(item)
+        except (pickle.PicklingError, TypeError, AttributeError):
+            # send() pickles the whole item before it writes anything, so
+            # the pipe is untouched and a second attempt is safe.
+            if not item["extra"]:
+                raise
+            item["extra"] = _picklable_extra(item["extra"])
+            self._conn.send(item)
 
 
 class _Collector(threading.Thread):
@@ -711,9 +743,14 @@ class _Collector(threading.Thread):
         """Write one message with the data it arose with."""
 
         def restore(record):
-            record.update(time=item["time"], name=item["name"],
-                          module=item["module"], function=item["function"],
-                          line=item["line"],
+            record.update(time=item["time"], elapsed=item["elapsed"],
+                          name=item["name"], module=item["module"],
+                          function=item["function"], line=item["line"],
+                          extra=item["extra"],
+                          file=type(record["file"])(
+                              os.path.basename(item["file"]), item["file"]),
+                          thread=type(record["thread"])(item["tid"],
+                                                        item["thread"]),
                           process=type(record["process"])(item["pid"],
                                                           item["process"]))
 

@@ -429,7 +429,7 @@ anderen Weg um, stehen beide Wege in getrennten Zeilen.
 | Eigene Warnungen unabhängig von den Mindeststufen | – | x | logdruid schreibt sie unter dem Namen `logdruid` direkt in die Ausgaben (2.6). |
 | Mindestens ein Ausgabeziel verlangen | – | x | Ohne Handler gibt loguru ohne Hinweis nichts aus. |
 | Ein globaler Logger je Prozess, der jeder Einrichtung folgt | x | – | loguru arbeitet mit genau einem globalen `logger`. Ein Prozess, der mit `spawn` entsteht, hat einen eigenen globalen Logger (beobachtet); logdruid richtet ihn im Kindprozess mit dem Anschluss ein und gibt in jedem Prozess den globalen Logger von loguru unverändert als `logger` weiter. |
-| Zusatzfelder an Meldungen binden | x | – | `bind`, `contextualize`, `configure(extra=…)`. Nach 2.1 nutzt logdruid das Merkmal von loguru unverändert; der heutige Code erfüllt das nicht: Über die Pipe und auf dem Weg zur Ausgabe gehen nur Zeit, Stufe, Prozess, Name, Modul, Funktion, Zeile und Text mit, sodass `{extra}` in jeder Meldung leer ist, auch im `main`-Prozess, und ein Format mit `{extra[…]}` die Meldung verwirft (beobachtet am 2026-10-22). Dasselbe trifft `{file}`, `{thread}` und `{elapsed}`. Behebung im Fahrplan für das nächste Release vorgemerkt. |
+| Zusatzfelder an Meldungen binden | x | – | `bind`, `contextualize`, `configure(extra=…)`. Nach 2.1 nutzt logdruid das Merkmal von loguru unverändert; dazu überträgt es `extra` mit jeder Meldung (3.1.4). Ein Wert aus einem Kindprozess, der sich nicht pickeln lässt, kommt als `str()` an. Bis 0.1.0 gingen `extra`, `{file}`, `{thread}` und `{elapsed}` verloren, behoben in 0.1.1. |
 | Mehrere Prozesse schreiben über eine gemeinsame Warteschlange | x | – | `enqueue=True`, bei `spawn` mit `context="spawn"`; die Handler liegen im Elternprozess, der Logger wird an die Kindprozesse übergeben. Die Warteschlange ist eine `multiprocessing.SimpleQueue` (`_handler.py`), deren `put` unter Linux eine Sperre über alle Prozesse nimmt (Python 3.12, `multiprocessing/queues.py`). logdruid nutzt sie deshalb nicht (2.3). |
 | Mehrere Prozesse schreiben über je eine eigene Pipe ohne gemeinsame Sperre | – | x | Je Kindprozess eine Pipe zum `main`-Prozess, beide Seiten in logdruid gekapselt; die einbindende Anwendung reicht nur den Anschluss durch. Ein hart beendeter Kindprozess betrifft nur seine eigene Pipe. |
 | Meldungen mehrerer Prozesse zeitlich ordnen, mit einstellbarem Fenster | – | x | Ordnung nach dem Zeitstempel, den loguru beim Aufruf im meldenden Prozess setzt (`_logger.py`: `aware_now()`); Vorgabe 100 ms, 0 ms schaltet ab. Ohne Ordnung gilt die Reihenfolge des Eintreffens. |
@@ -532,3 +532,29 @@ gesetzt. Damit gehen sie weder durch den Filter der Mindeststufen noch
 durch das Zeitfenster der Ordnung, sondern erscheinen sofort. Die
 Warnungen zur Konfiguration entstehen am Ende von `setup()`, bevor ein
 Kindprozess existiert; die zur Übertragung im sammelnden Thread.
+
+### 3.1.4 Was durch die Pipe geht
+
+Je Meldung überträgt `_to_item()` die Felder des Eintrags von loguru, die
+der `main`-Prozess nicht selbst richtig setzen kann: Zeit und `elapsed`,
+Stufe, Prozess und Thread mit Name und Kennung, Name, Modul, Funktion,
+Pfad der Datei, Zeile, `extra` und den fertigen Text samt Rückverfolgung.
+`_write()` setzt sie vor dem Schreiben per `patch` wieder ein. Den Namen
+der Datei bildet es dabei aus dem Pfad, wie loguru selbst
+(`basename(co_filename)` in `_logger.py`); so geht der Text nur einmal
+durch die Pipe. Dieselben Felder nimmt auch der Weg der eigenen Meldungen
+des `main`-Prozesses, nur ohne Pickeln.
+
+`elapsed` ist die Zeit seit dem Import von loguru in dem Prozess, der
+meldet (`start_time` in `_logger.py`, beim Import gesetzt); ein
+Kindprozess zählt also ab seinem eigenen Start. Das ist dieselbe
+Bedeutung, die loguru in jedem einzelnen Prozess hat.
+
+Lässt sich ein Wert in `extra` nicht pickeln, schlägt `send()` fehl. Das
+ist unschädlich, denn `Connection.send()` pickelt die ganze Meldung, bevor
+es ein Byte schreibt (`multiprocessing/connection.py`, Python 3.12). Der
+Kindprozess sendet dann genau einmal neu, mit jedem solchen Wert als
+`str()`, gebildet in `_picklable_extra()`; den Mehraufwand hat nur dieser
+Fall. `str()` entspricht der Darstellung, die ein Format ohne Angabe ohnehin
+zeigt. Ein Wert, der nur im `main`-Prozess gebunden wird, bleibt das
+ursprüngliche Objekt.

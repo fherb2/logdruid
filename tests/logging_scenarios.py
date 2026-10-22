@@ -15,6 +15,7 @@ import multiprocessing as mp
 import os
 import signal
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -57,6 +58,13 @@ def library_user(log_link) -> None:
     logging.getLogger("other").info("other info")
 
 
+def field_reporter(log_link) -> None:
+    """Report with bound values, one of which cannot be pickled."""
+    logdruid.attach(log_link)
+    logger.bind(user="child", lock=threading.Lock()).info("child fields")
+    logger.opt(record=True).info("child elapsed {record[elapsed]}")
+
+
 def failer(log_link) -> None:
     """Log one exception with its traceback."""
     logdruid.attach(log_link)
@@ -96,6 +104,9 @@ def run() -> None:
         children = [_start(ctx, library_user, "user")]
     elif scenario == "exception":
         children = [_start(ctx, failer, "failer")]
+    elif scenario == "fields":
+        logger.bind(user="main").info("main fields")
+        children = [_start(ctx, field_reporter, "fields")]
     elif scenario == "quiet":
         pass                            # setup and shutdown only
     else:
