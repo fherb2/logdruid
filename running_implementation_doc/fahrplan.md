@@ -2,25 +2,16 @@
 
 ## Noch offen
 
-1. **PyPI Trusted Publisher registrieren** (`pypi.org/manage/account/publishing/`,
-   „pending publisher"), mit dem Workflow-Dateinamen
-   `.github/workflows/release.yml` und Environment-Name `pypi` — erst
-   wirksam ab dem ersten Release-Tag.
-
-2. **Vor dem Release:** 2FA auf dem PyPI-Konto aktivieren (seit 2024 für
-   jedes Konto Pflicht, nicht nur für kritische Projekte). `twine check
-   dist/*` läuft bereits automatisch im Release-Workflow.
-
-3. **Dokumentation entscheiden:** mkdocs (mit mkdocstrings) oder Sphinx.
+1. **Dokumentation entscheiden:** mkdocs (mit mkdocstrings) oder Sphinx.
    Offener Punkt dabei: Das mkdocs-Ökosystem ist 2026 im Umbruch (Material
    for MkDocs geht in den Wartungsmodus zugunsten des Nachfolgers
    „Zensical", der noch Alpha ist) — vor einer Festlegung prüfen, ob das
    noch aktuell ist.
 
-4. **Ersten Release-Tag setzen** (`v0.1.0.dev1` o. Ä.), sobald der
-   Trusted Publisher registriert ist.
+2. **Ersten Release-Tag setzen** (`v0.1.0.dev1`), Trusted Publisher ist
+   registriert.
 
-5. **Rückintegration in `Anwenderprojekt`:** `dortiges Logging-Modul`
+3. **Rückintegration in `Anwenderprojekt`:** `dortiges Logging-Modul`
    durch `pip install logdruid` (bzw. Eintrag in dessen
    Abhängigkeitsliste) ersetzen, alle `from Vorgängermodul import ...` auf
    `from logdruid import ...` umstellen, `Logging-Konfiguration` zu
@@ -68,3 +59,6 @@
   nutzt jetzt `poetry install --only dev` statt eines rohen `pip install`.
   Lokal verifiziert: `poetry run tox -e py312` grün.
 - Badges in README.md (PyPI-Version, Testlauf-Status).
+- PyPI-Konto: 2FA aktiviert, Trusted Publisher als „pending publisher"
+  registriert (`logdruid`, Owner `fherb2`, `release.yml`, Environment
+  `pypi`) — vom Entwickler selbst ausgeführt.
