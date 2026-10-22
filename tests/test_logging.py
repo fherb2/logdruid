@@ -21,10 +21,12 @@ SCENARIO_TIMEOUT_S = 60
 LINE_FORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSSSSS}|{level}|{process.name}|{name}|{message}"
 LINE = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6})\|(\w+)\|(\w+)\|([\w.]+)\|(.*)$")
 
-# Configuration written for each scenario; WINDOW_MS is replaced. The
-# translation applies to the logger lib and everything below it.
+# Configuration written for each scenario; EXTRA, STD_LEVEL and WINDOW_MS
+# are replaced. The translation applies to the logger lib and everything
+# below it.
 CONF_TEMPLATE = """
-std_level = "INFO"
+EXTRA
+std_level = "STD_LEVEL"
 sort_window_ms = WINDOW_MS
 
 [output.console]
@@ -37,11 +39,17 @@ translate = { DEBUG = "TRACE", INFO = false }
 """.replace("LINE_FORMAT", LINE_FORMAT)
 
 
-def run_scenario(name: str, window_ms: int = 100):
-    """Run one scenario; return its output and its exit code."""
+def run_scenario(name: str, window_ms: int = 100, std_level: str = "INFO",
+                 extra: str = ""):
+    """Run one scenario; return its output and its exit code.
+
+    extra is put at the top of the configuration, for keys of its own.
+    """
     with tempfile.TemporaryDirectory() as tmp:
         conf = Path(tmp) / "logdruid.toml"
-        conf.write_text(CONF_TEMPLATE.replace("WINDOW_MS", str(window_ms)))
+        conf.write_text(CONF_TEMPLATE.replace("EXTRA", extra)
+                        .replace("STD_LEVEL", std_level)
+                        .replace("WINDOW_MS", str(window_ms)))
         result = subprocess.run(
             [sys.executable, "-c",
              "import logging_scenarios; logging_scenarios.run()",
@@ -138,6 +146,19 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(code, 0, output)
         self.assertEqual(output.count("ZeroDivisionError: scenario failure"),
                          1, output)
+
+
+class OwnWarningTest(unittest.TestCase):
+    """logdruid's own warnings carry its name and pass every level."""
+
+    def test_a_configuration_warning_appears_even_on_error(self):
+        output, code = run_scenario("quiet", std_level="ERROR",
+                                    extra="colour = 1")
+        self.assertEqual(code, 0, output)
+        warnings = [line for line in parsed(output)
+                    if line[1] == "WARNING" and line[3] == "logdruid"]
+        self.assertEqual(len(warnings), 1, output)
+        self.assertIn("colour", warnings[0][4])
 
 
 if __name__ == "__main__":

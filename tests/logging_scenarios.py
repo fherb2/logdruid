@@ -96,6 +96,8 @@ def run() -> None:
         children = [_start(ctx, library_user, "user")]
     elif scenario == "exception":
         children = [_start(ctx, failer, "failer")]
+    elif scenario == "quiet":
+        pass                            # setup and shutdown only
     else:
         raise SystemExit(f"unknown scenario {scenario}")
 

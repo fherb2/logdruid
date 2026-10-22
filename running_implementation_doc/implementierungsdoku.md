@@ -49,7 +49,9 @@ Schwälle eindämmen. Die Vorgaben dazu stehen in 2.7.
 
 Alles, was logdruid betrifft, steht in einer eigenen Datei neben der
 Anwendungskonfiguration, nicht in ihr (Begründung: 2.6). Ein Beispiel mit
-Erläuterungen zu jedem Abschnitt liegt unter `examples/logdruid.toml`.
+Erläuterungen zu jedem Abschnitt liegt unter `examples/logdruid.toml`. Ob
+eine solche Datei fehlerfrei ist, lässt sich ohne Einrichten mit
+`check_config()` prüfen, etwa in der CI der Anwendung (2.6).
 
 ## 1.4 Neues Feature in der Weiterentwicklung: kritische Fehler und ihre Rückverfolgung zuverlässig erfassen
 
@@ -167,7 +169,7 @@ Anwendung bleibt:
   eigene Datei oder nach `stderr`, deren Inhalt eine Anwendung später
   selbst ins Log übernehmen könnte.
 
-### Was zur Version `dev2` gehört
+### Was zur Umsetzung gehört
 
 Laut Auftrag: die Umsetzung dessen, was aus diesem Kapitel in der
 eigentlichen Planung wird, **und** seine Beschreibung in der
@@ -331,6 +333,16 @@ Schlüssel, eine fehlende Datei — erzeugen eine Warnung, keinen Abbruch; an
 loguru gehen nur gültige Werte. Ist kein Ausgabeziel eingeschaltet, warnt
 logdruid und gibt auf der Konsole aus.
 
+Die eigenen Warnungen von logdruid – zur Konfiguration wie zur Übertragung
+(abgebrochene Pipe, Zeitüberschreitung beim Abbau) – tragen den Namen
+`logdruid` und unterliegen keiner Mindeststufe: Sie gehen direkt in die
+Ausgaben, nicht durch den Filter der Stufen.
+
+Ob eine Konfiguration fehlerfrei ist, lässt sich ohne Einrichten prüfen:
+`check_config()` löst dieselben Ebenen auf wie `setup()` und gibt die
+Warnungen als Liste zurück, etwa für eine Prüfung in der CI. Ob sich eine
+Ausgabe tatsächlich anlegen lässt, erkennt erst `setup()`.
+
 Wird eine Anwendung über einen Einstiegspunkt eines Pakets gestartet
 (`[project.scripts]`), ist `__main__` vermutlich das dafür erzeugte
 Startskript im `bin`-Ordner der Umgebung (Kenntnisstand, nicht geprüft). Dort
@@ -341,11 +353,15 @@ Grund: Die Einstellungen des Loggings sind Wissen der Implementierung über
 die eingebundenen Bibliotheken und über die Lautstärke der eigenen Teile; sie
 gehören an einen Ort, der mit dem Modul mitwandert, nicht in die
 Konfiguration der Anwendung. Fehler im Logging sollen die Anwendung nicht
-anhalten.
+anhalten. Eine zu hoch eingestellte Mindeststufe darf den Hinweis auf einen
+Fehler in der Konfiguration nicht verschlucken; und ein fester Name statt
+des Modulpfads bleibt gleich, wenn sich der Aufbau des Pakets ändert.
 
 Prüfbar: Eine Einstellung des Loggings in der Konfigurationsdatei der
 Anwendung statt in der von logdruid verletzt die Vorgabe, ebenso ein Abbruch
-wegen eines Fehlers in Letzterer.
+wegen eines Fehlers in Letzterer, und ebenso eine eigene Warnung von
+logdruid, die über den globalen Logger und damit durch den Filter der
+Stufen geht oder einen anderen Namen als `logdruid` trägt.
 
 ## 2.7 Einbinden einer Bibliothek
 
@@ -409,6 +425,8 @@ anderen Weg um, stehen beide Wege in getrennten Zeilen.
 | Rangfolge Vorgabe < API < Datei < Kommandozeile, je Feld | – | x | loguru kennt über seine Vorgaben nur die Umgebungsvariablen. |
 | Fundort der Datei neben dem Einstiegspunkt der Anwendung | – | x | |
 | Warnung statt Abbruch bei Fehlern in der Konfiguration | – | x | Vergleiche „Unbekannte Stufennamen erkennen". |
+| Konfiguration prüfen, ohne etwas einzurichten | – | x | `check_config()` gibt die Warnungen zurück, die `setup()` melden würde (2.6). |
+| Eigene Warnungen unabhängig von den Mindeststufen | – | x | logdruid schreibt sie unter dem Namen `logdruid` direkt in die Ausgaben (2.6). |
 | Mindestens ein Ausgabeziel verlangen | – | x | Ohne Handler gibt loguru ohne Hinweis nichts aus. |
 | Ein globaler Logger je Prozess, der jeder Einrichtung folgt | x | – | loguru arbeitet mit genau einem globalen `logger`. Ein Prozess, der mit `spawn` entsteht, hat einen eigenen globalen Logger (beobachtet); logdruid richtet ihn im Kindprozess mit dem Anschluss ein und gibt in jedem Prozess den globalen Logger von loguru unverändert als `logger` weiter. |
 | Zusatzfelder an Meldungen binden | x | – | `bind`, `contextualize`, `configure(extra=…)`. Nach 2.1 nutzt logdruid das Merkmal von loguru unverändert; der heutige Code erfüllt das nicht: Über die Pipe und auf dem Weg zur Ausgabe gehen nur Zeit, Stufe, Prozess, Name, Modul, Funktion, Zeile und Text mit, sodass `{extra}` in jeder Meldung leer ist, auch im `main`-Prozess, und ein Format mit `{extra[…]}` die Meldung verwirft (beobachtet am 2026-10-22). Dasselbe trifft `{file}`, `{thread}` und `{elapsed}`. Behebung im Fahrplan für das nächste Release vorgemerkt. |
@@ -418,7 +436,7 @@ anderen Weg um, stehen beide Wege in getrennten Zeilen.
 | Fehler in einem Ausgabeziel abfangen, statt die Anwendung abzubrechen | x | – | `catch=True`, Vorgabe. |
 | Ausnahmen in einer Funktion automatisch melden | x | – | `logger.catch` als Dekorator. |
 | Teure Argumente erst bei Bedarf auswerten | x | – | `opt(lazy=True)`. |
-| Meldung vor der Ausgabe verändern | x | – | `patch`; logdruid nutzt es für den Loggernamen bei übernommenen Meldungen. |
+| Meldung vor der Ausgabe verändern | x | – | `patch`; logdruid nutzt es für den Loggernamen bei übernommenen Meldungen und für den Namen seiner eigenen Warnungen. |
 | Logdateien wieder einlesen | x | – | `parse`. |
 | Unabhängige Logger mit eigenen Handlern | x | – | über `copy.deepcopy` des Loggers (siehe 3.1, Eigenheit „deepcopy"). |
 
@@ -430,6 +448,31 @@ snippets and recipes"
 (https://loguru.readthedocs.io/en/stable/overview.html); Quelltext von loguru
 0.7.3 (`_logger.py`, `_handler.py`, `_filters.py`, `_file_sink.py`,
 `_defaults.py`, `__init__.py`).
+
+## 2.9 Öffentliche Schnittstelle und Stabilität
+
+Öffentlich sind genau die Namen in `__all__` des Pakets: `logger`,
+`setup`, `check_config`, `link`, `attach`, `shutdown`, `LogLink` und
+`CONFIG_FILE_NAME`. Von `LogLink` sind nur der Typ und `release()`
+öffentlich; seine Felder sind intern. Alles andere – `Settings`, alle
+Namen mit Unterstrich, das Modul `logdruid.logdruid` als solches – ist
+intern und kann sich ohne Ankündigung ändern.
+
+Für die Stabilität gelten die drei Zahlen der Version im Sinne von
+Semantic Versioning. Bis einschließlich der Entwicklungsfassungen vor
+`0.1.0` kann sich noch alles ändern, Schnittstelle wie Format der
+Konfigurationsdatei. Ab `0.1.0` kündigt, solange die erste Zahl `0` ist,
+eine neue zweite Zahl einen Bruch an; eine neue dritte Zahl bricht nichts.
+Jede Änderung an der Schnittstelle oder am Format der Konfigurationsdatei
+steht in `CHANGELOG.md`.
+
+Grund: Wer logdruid einbindet, muss wissen, worauf er sich verlassen kann
+und woran er eine Änderung erkennt, die ihn betrifft.
+
+Prüfbar: Ein Name in `__all__`, der hier nicht steht, oder ein Name von
+hier, der in `__all__` fehlt, verletzt die Vorgabe (`tests/test_api.py`
+prüft das); ebenso eine Änderung der Schnittstelle oder des Formats der
+Konfigurationsdatei ohne Eintrag in `CHANGELOG.md`.
 
 # 3 Einheiten
 
@@ -479,3 +522,13 @@ eigene Datei mit Drehung.
 Stand von Commit `f69672f9c6c39cd2291424dc2b11ab8bcd6685ce`: dessen
 Logging-Modul und seine Konfigurationsdatei. Die Historie wurde nicht
 mitgenommen; der erste Commit dieses Repositories nennt den Quellstand.
+
+### 3.1.3 Eigene Warnungen
+
+Die eigenen Warnungen schreibt logdruid nicht über den globalen Logger,
+sondern über die Kopie des Loggers, an der die Ausgaben hängen (siehe die
+Eigenheit „deepcopy" in 3.1.1), mit `patch` auf den Namen `logdruid`
+gesetzt. Damit gehen sie weder durch den Filter der Mindeststufen noch
+durch das Zeitfenster der Ordnung, sondern erscheinen sofort. Die
+Warnungen zur Konfiguration entstehen am Ende von `setup()`, bevor ein
+Kindprozess existiert; die zur Übertragung im sammelnden Thread.

@@ -24,8 +24,12 @@ from loguru import logger
 
 # --- Module parameters ------------------------------------------------
 
-# Name of the configuration file looked for next to the entry point.
 CONFIG_FILE_NAME = "logdruid.toml"
+"""Name of the configuration file setup() looks for next to the entry point."""
+
+# Name under which logdruid writes its own warnings. They bypass the
+# minimum levels: a level set too high must not hide a configuration error.
+OWN_NAME = "logdruid"
 
 # Lowest layer: what applies when neither API, file nor command line
 # say anything. No translation, one level for everything.
@@ -112,16 +116,8 @@ class LogLink:
     """What a child process needs to log into the main process.
 
     Created by link() in the main process and handed to the child as an
-    argument; the child passes it to attach().
-
-    Attributes
-    ----------
-    process_name : str
-        Name the child process carries in every message.
-    conn : multiprocessing.connection.Connection
-        Write end of the child's own pipe.
-    settings : Settings
-        Resolved configuration of the main process.
+    argument; the child passes it to attach(). Its fields are internal;
+    only release() is part of the public interface.
     """
 
     process_name: str
@@ -171,15 +167,8 @@ def setup(config_path: Optional[Path] = None, *,
 
     mp.current_process().name = process_name
     warnings: List[str] = []
-    file_layer = _read_config_file(config_path, warnings)
-    cli_layer: Dict[str, Any] = {}
-    if cli_level is not None:
-        cli_layer["std_level"] = cli_level
-    if cli_log_file is not None:
-        cli_layer["output"] = {"file": {"path": cli_log_file}}
-
-    raw_layers = [cli_layer, file_layer, defaults or {}, MODULE_DEFAULTS]
-    _settings = _resolve(raw_layers, warnings)
+    _settings = _load_settings(config_path, defaults, cli_level, cli_log_file,
+                               warnings)
     _threshold_cache.clear()
 
     logger.remove()
@@ -195,7 +184,33 @@ def setup(config_path: Optional[Path] = None, *,
     atexit.register(shutdown)
 
     for text in warnings:
-        logger.warning(text)
+        _output.patch(_own_name).warning(text)
+
+
+def check_config(config_path: Optional[Path] = None, *,
+                 defaults: Optional[Dict[str, Any]] = None,
+                 cli_level: Optional[str] = None,
+                 cli_log_file: Optional[str] = None) -> List[str]:
+    """Check a configuration without setting anything up.
+
+    Resolves the same layers as setup() and returns the warnings setup()
+    would report about them. Whether an output can actually be created,
+    for example whether the path of the log file is writable, only setup()
+    finds out.
+
+    Parameters
+    ----------
+    config_path, defaults, cli_level, cli_log_file
+        As for setup().
+
+    Returns
+    -------
+    list of str
+        The warnings; empty if the configuration is sound.
+    """
+    warnings: List[str] = []
+    _load_settings(config_path, defaults, cli_level, cli_log_file, warnings)
+    return warnings
 
 
 def link(process_name: str) -> LogLink:
@@ -257,6 +272,22 @@ def shutdown() -> None:
 
 
 # --- Configuration ----------------------------------------------------
+
+def _load_settings(config_path: Optional[Path],
+                   defaults: Optional[Dict[str, Any]],
+                   cli_level: Optional[str],
+                   cli_log_file: Optional[str],
+                   warnings: List[str]) -> Settings:
+    """Resolve the four layers into Settings, collecting the warnings."""
+    file_layer = _read_config_file(config_path, warnings)
+    cli_layer: Dict[str, Any] = {}
+    if cli_level is not None:
+        cli_layer["std_level"] = cli_level
+    if cli_log_file is not None:
+        cli_layer["output"] = {"file": {"path": cli_log_file}}
+    raw_layers = [cli_layer, file_layer, defaults or {}, MODULE_DEFAULTS]
+    return _resolve(raw_layers, warnings)
+
 
 def _read_config_file(config_path: Optional[Path],
                       warnings: List[str]) -> Dict[str, Any]:
@@ -528,6 +559,11 @@ def _take_over_std_logging(process: str) -> None:
 
 # --- Transport between the processes ------------------------------------
 
+def _own_name(record: Dict[str, Any]) -> None:
+    """loguru patcher: mark a message as logdruid's own warning."""
+    record.update(name=OWN_NAME)
+
+
 def _to_item(message) -> Dict[str, Any]:
     """What travels for one message: its data, not loguru's objects."""
     record = message.record
@@ -595,7 +631,7 @@ class _Collector(threading.Thread):
         self._stopping = True
         self.join(timeout_s)
         if self.is_alive():
-            self._output.warning(
+            self._output.patch(_own_name).warning(
                 f"Logging pipes of {sorted(self._pipes.values())} did not "
                 f"end within {timeout_s} s; their remaining messages are lost")
         with self._lock:
@@ -648,9 +684,9 @@ class _Collector(threading.Thread):
             name = self._pipes.pop(conn, "?")
         conn.close()
         if exc is not None:
-            self._output.warning(f"Logging pipe of {name} broke off "
-                                 f"({type(exc).__name__}); later messages "
-                                 f"of that process are lost")
+            self._output.patch(_own_name).warning(
+                f"Logging pipe of {name} broke off ({type(exc).__name__}); "
+                f"later messages of that process are lost")
 
     def _push(self, item: Dict[str, Any]) -> None:
         """Queue a message by its time stamp."""

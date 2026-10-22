@@ -6,12 +6,15 @@ Run with either of:
 """
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 import logdruid.logdruid as logdruid  # noqa: E402  (whitebox: the impl module)
+from logdruid import check_config     # noqa: E402
 
 
 def _resolved(*layers):
@@ -147,5 +150,25 @@ class LoggingConfigWarningsTest(unittest.TestCase):
             {"loggers": {"lib": {"translate": {"DEBUG": "NOPE"}}}})
         self.assertTrue(any("NOPE" in text for text in warnings))
         self.assertEqual(settings.layers[0]["loggers"]["lib"]["translate"], {})
+
+
+class CheckConfigTest(unittest.TestCase):
+    """check_config() returns the warnings without setting anything up."""
+
+    def test_the_example_file_resolves_without_warnings(self):
+        path = PROJECT_ROOT / "examples" / "logdruid.toml"
+        self.assertEqual(check_config(path), [])
+
+    def test_a_mistake_is_returned_as_a_warning(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "logdruid.toml"
+            path.write_text('colour = 1\nstd_level = "LOUD"\n')
+            warnings = check_config(path)
+        self.assertTrue(any("colour" in text for text in warnings))
+        self.assertTrue(any("LOUD" in text for text in warnings))
+
+    def test_a_missing_file_is_a_warning(self):
+        warnings = check_config(Path("/nonexistent/logdruid.toml"))
+        self.assertTrue(any("not found" in text for text in warnings))
 
 
