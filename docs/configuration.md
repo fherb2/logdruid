@@ -72,25 +72,22 @@ By default the console is on and the file is off. Without `format`, loguru's
 default format applies. A relative path of the file is relative to the
 working directory at start; loguru creates missing directories itself.
 
-**Which fields the format can use.** It follows from
-[section 3](how-it-works.md) what is correct in the output: `{time}`,
-`{level}`, `{message}`, `{name}`, `{module}`, `{function}`, `{line}` and
-`{process}` with name and id. The following fields are not correct at
-present, not even for messages of the `main` process; this will be fixed in
-an upcoming version:
+**Which fields the format can use.** All of loguru's fields, with the values
+the reporting process set ([section 3](how-it-works.md)): `{time}`,
+`{elapsed}`, `{level}`, `{message}`, `{name}`, `{module}`, `{function}`,
+`{file}`, `{line}`, `{process}`, `{thread}` and `{extra}`. Two particulars:
 
-- `{extra}` is always empty; values from `bind()` and `contextualize()` are
-  missing. A format with `{extra[key]}` makes every message disappear; loguru
-  then writes "Logging error in Loguru Handler" to `stderr` instead.
-- `{file}` always names logdruid's own file, not that of the message.
-- `{thread}` names the thread that writes the message, so not reliably the
-  one in which it was reported.
-- `{elapsed}` refers to the moment of writing in the `main` process, not to
-  the message.
+- `{elapsed}` is the time since the start of the reporting process; a child
+  process counts from its own start. This is the same meaning the field has
+  in loguru within each single process.
+- A traceback is part of the message text, that is, of `{message}`; an
+  explicit `{exception}` in the format stays empty.
 
-A traceback is part of the message text, that is, of `{message}`; an
-explicit `{exception}` in the format stays empty. With `serialize = true`,
-the JSON contains the same fields in the same state.
+As with loguru itself: if the format refers to a value with
+`{extra[key]}`, every message must have it; for a message without it,
+loguru refuses the format and writes "Logging error in Loguru Handler" to
+`stderr` instead. With `serialize = true`, the JSON contains the same
+fields.
 
 **`backtrace` and `diagnose`** are set per output in its table, but always
 act on both outputs alike: `diagnose`, the display of variable values in a

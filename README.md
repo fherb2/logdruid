@@ -45,6 +45,7 @@ through `logging`.
 | Taking over messages from `logging` | only as a code example in loguru's documentation | yes, with the logger's name and with level translation per logger |
 | Configuration from a file, precedence defaults < application < file < command line | no, only environment variables | yes |
 | Mistakes in the configuration do not stop the application | no | yes, they only produce a warning |
+| Extra fields from `bind()` and `contextualize()` in the output | yes | yes, from child processes as well |
 
 ## Documentation
 

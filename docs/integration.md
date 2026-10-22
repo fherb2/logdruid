@@ -149,12 +149,12 @@ time; `logger.remove()` and `logger.configure()` would cut the connection to
 logdruid. Outputs belong in the configuration file
 ([section 5](configuration.md)).
 
-`logger.bind()` and `logger.contextualize()` can be called without anything
-failing, but the attached values do not reach the output at present, not
-even for messages of the `main` process. A format that refers to such a field
-with `{extra[...]}` makes the messages disappear entirely
-([section 5.3](configuration.md#53-outputs)). This will be fixed in an
-upcoming version.
+`logger.bind()` and `logger.contextualize()` work as in loguru: the attached
+values are available to the format as `{extra}` or `{extra[key]}`, for
+messages of every process. A value from a child process has to go through
+the pipe for this; if it cannot be pickled, such as a lock or an open file,
+it arrives as text (`str(value)`) and the message is not lost. In the
+`main` process, every value stays the original object.
 
 Recommended meaning of the levels – logdruid does not enforce it, but it
 helps when setting levels and when integrating libraries

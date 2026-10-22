@@ -16,12 +16,14 @@ hard, its pipe ends; whatever it had written into it until then arrives.
 Filtering happens where a message arises. Whatever does not reach the
 configured minimum level never goes through the pipe at all.
 
-Per message, the pipe carries: the time stamp the reporting process sets at
-the call, the level, the name and id of the process, the name of the message,
-the module, function and line of the call, and the finished text of the
-message, a traceback included as text. Nothing more goes through; what this
-means for the format of the output is described in
-[section 5.3](configuration.md#53-outputs).
+Per message, the pipe carries everything loguru records about it: the time
+stamp the reporting process sets at the call and the time since that
+process started, the level, the name and id of the process and the thread,
+the name of the message, the module, function, file and line of the call,
+the values attached with `bind()` and `contextualize()`, and the finished
+text of the message, a traceback included as text. The `main` process puts
+these back when writing, so the format of the output shows them as the
+reporting process set them ([section 5.3](configuration.md#53-outputs)).
 
 The `main` process puts its own messages into the same order. It holds every
 message back for a short time window, 100 ms by default, and then writes the

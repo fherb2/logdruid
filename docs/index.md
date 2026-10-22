@@ -2,7 +2,7 @@
 
 A drop-in logging setup layer for multi-process applications, built on
 [loguru](https://loguru.readthedocs.io/). This documentation describes
-version 0.1.0.
+version 0.1.1.
 
 ## 1 What logdruid is for
 
@@ -49,7 +49,7 @@ through `logging`; the application that uses them takes over their messages
 | Taking over messages from `logging` | only as a code example in loguru's documentation | yes, with the logger's name and with level translation per logger |
 | Configuration from a file, precedence defaults < application < file < command line | no, only environment variables | yes |
 | Mistakes in the configuration do not stop the application | no, an unknown level aborts with `ValueError` | yes, they only produce a warning |
-| Extra fields from `bind()` and `contextualize()` in the output | yes | not at present, they are lost on the way; to be fixed in an upcoming version |
+| Extra fields from `bind()` and `contextualize()` in the output | yes | yes, from child processes as well |
 
 ## 2 Installation and requirements
 

@@ -7,10 +7,6 @@ A summary of what the previous sections already state where it matters:
   ([section 2](index.md#2-installation-and-requirements)).
 - Tested only on Linux, with Python 3.11 to 3.13
   ([section 2](index.md#2-installation-and-requirements)).
-- Values from `bind()` and `contextualize()` as well as the fields `{extra}`,
-  `{file}`, `{thread}` and `{elapsed}` do not arrive correctly in the output;
-  a format with `{extra[...]}` makes messages disappear. To be fixed in an
-  upcoming version ([section 5.3](configuration.md#53-outputs)).
 - Uncaught exceptions do not go into the log but directly to `stderr`; for
   child processes there is a workaround with `logger.catch`. To be fixed in
   an upcoming version ([section 7.2](exceptions.md#72-uncaught-exceptions)).
