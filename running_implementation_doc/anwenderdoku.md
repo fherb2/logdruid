@@ -1,6 +1,6 @@
 # logdruid – Anwenderdokumentation
 
-Stand: Version 0.1.0.dev3
+Stand: Version 0.1.0
 
 ## 1 Wozu logdruid da ist
 

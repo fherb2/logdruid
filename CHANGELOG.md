@@ -6,6 +6,16 @@ numbers follow [Semantic Versioning](https://semver.org/). Until 0.1.0, the
 development releases may still change anything; see "Versions and
 stability" in the documentation.
 
+## [0.1.0] - 2026-10-22
+
+First stable release. Code and interface are unchanged from 0.1.0.dev3;
+from this version on, the rules under "Versions and stability" in the
+documentation apply.
+
+### Changed
+
+- Development status in the package metadata: Production/Stable.
+
 ## [0.1.0.dev3] - 2026-10-22
 
 ### Added
@@ -34,7 +44,7 @@ stability" in the documentation.
 - Documentation: text in angle brackets that browsers swallowed; the API
   page no longer shows source code or a garbled usage example.
 
-## [0.1.0.dev2] - 2026-10-22
+## [0.1.0.dev2] - 2026-10-22 [YANKED]
 
 ### Changed
 
@@ -42,7 +52,7 @@ stability" in the documentation.
 - Example configuration: remarks about command-line options removed;
   logdruid does not read the command line.
 
-## [0.1.0.dev1] - 2026-10-22
+## [0.1.0.dev1] - 2026-10-22 [YANKED]
 
 ### Added
 
@@ -52,6 +62,7 @@ stability" in the documentation.
   translation per logger; minimum levels per process and per name; a
   configuration file with four layers.
 
+[0.1.0]: https://github.com/fherb2/logdruid/releases/tag/v0.1.0
 [0.1.0.dev3]: https://github.com/fherb2/logdruid/releases/tag/v0.1.0.dev3
 [0.1.0.dev2]: https://github.com/fherb2/logdruid/releases/tag/v0.1.0.dev2
 [0.1.0.dev1]: https://github.com/fherb2/logdruid/releases/tag/v0.1.0.dev1

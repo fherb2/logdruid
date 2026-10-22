@@ -2,7 +2,7 @@
 
 A drop-in logging setup layer for multi-process applications, built on
 [loguru](https://loguru.readthedocs.io/). This documentation describes
-version 0.1.0.dev3.
+version 0.1.0.
 
 ## 1 What logdruid is for
 
