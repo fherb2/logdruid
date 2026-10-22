@@ -2,10 +2,6 @@
 
 ## Noch offen
 
-0. **`0.1.0.dev1` und `0.1.0.dev2` auf PyPI löschen** — vom Entwickler per
-   Hand, sobald `0.1.0.dev3` dort ist. Ihre Metadaten tragen noch die
-   frühere Autorenangabe samt Adresse.
-
 1. **Rückintegration in das Anwenderprojekt, aus dem logdruid
    ausgegründet wurde** — *läuft gerade in einer anderen Sitzung/Instanz
    dort, nicht hier.* Diese Sitzung wartet, bis dort Anpassungsbedarf an
@@ -169,3 +165,7 @@
   der Rückintegration behoben (L1–L5); `CHANGELOG.md`; Projekt-Links und
   feste Kategorien in den Metadaten; README ohne Verweis auf die
   internen Arbeitsdokumente.
+- `0.1.0.dev1` und `0.1.0.dev2` auf PyPI gelöscht (vom Entwickler, nach
+  `dev3`): Ihre Metadaten trugen noch die frühere Autorenangabe samt
+  Adresse. Diese beiden Versionsnummern sind damit auf PyPI dauerhaft
+  verbraucht.
