@@ -1,34 +1,18 @@
 # logdruid
 
-[![PyPI version](https://img.shields.io/pypi/v/logdruid.svg)](https://pypi.org/project/logdruid/)
-[![Tests](https://github.com/fherb2/logdruid/actions/workflows/tests.yml/badge.svg)](https://github.com/fherb2/logdruid/actions/workflows/tests.yml)
+[![PyPI version](https://img.shields.io/pypi/v/logdruid.svg)](https://pypi.org/project/logdruid/) [![Tests](https://github.com/fherb2/logdruid/actions/workflows/tests.yml/badge.svg)](https://github.com/fherb2/logdruid/actions/workflows/tests.yml)
 
-A drop-in logging setup layer for multi-process applications, built on
-[loguru](https://loguru.readthedocs.io/).
+A drop-in logging setup layer for multi-process applications, built on [loguru](https://loguru.readthedocs.io/).
 
 **[Documentation](https://fherb2.github.io/logdruid/)** – installation, usage, configuration and API.
 
 ## What it is for
 
-loguru is a logging library for Python with exactly one global logger. In an
-application with several processes, loguru alone reaches its limits: each
-process started with `spawn` has its own logger with its own outputs; a
-shared output across processes goes through a queue whose lock spans all
-processes, so a process killed hard while holding it can block logging
-everywhere; and messages from libraries that report through the standard
-`logging` module do not appear in loguru's outputs.
+loguru is a logging library for Python with exactly one global logger. In an application with several processes, loguru alone reaches its limits: each process started with `spawn` has its own logger with its own outputs; a shared output across processes goes through a queue whose lock spans all processes, so a process killed hard while holding it can block logging everywhere; and messages from libraries that report through the standard `logging` module do not appear in loguru's outputs.
 
-logdruid is a setup layer around loguru for exactly this case: applications
-– not libraries – with several processes. It does not build a logging API of
-its own: you keep reporting with loguru's logger, unchanged. logdruid only
-sets it up and adds what loguru does not offer: one shared output for all
-processes, ordered by time, without a lock across process boundaries; taking
-over the messages from `logging`; and a configuration in a file of its own.
+logdruid is a setup layer around loguru for exactly this case: applications – not libraries – with several processes. It does not build a logging API of its own: you keep reporting with loguru's logger, unchanged. logdruid only sets it up and adds what loguru does not offer: one shared output for all processes, ordered by time, without a lock across process boundaries; taking over the messages from `logging`; and a configuration in a file of its own.
 
-For an application with a single process, loguru alone is enough, as it is
-when each process may write to its own file and the order across processes
-does not matter. Libraries should use neither loguru nor logdruid but report
-through `logging`.
+For an application with a single process, loguru alone is enough, as it is when each process may write to its own file and the order across processes does not matter. Libraries should use neither loguru nor logdruid but report through `logging`.
 
 ## Features
 
@@ -49,8 +33,7 @@ through `logging`.
 
 ## Documentation
 
-Installation, usage, configuration, the API reference and the changelog:
-<https://fherb2.github.io/logdruid/>
+Installation, usage, configuration, the API reference and the changelog: <https://fherb2.github.io/logdruid/>
 
 ## License
 
