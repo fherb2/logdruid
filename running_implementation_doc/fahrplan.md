@@ -2,54 +2,39 @@
 
 ## Noch offen
 
-1. **Rückintegration in das Anwenderprojekt, aus dem logdruid
-   ausgegründet wurde** — *läuft gerade in einer anderen Sitzung/Instanz
-   dort, nicht hier.* Diese Sitzung wartet, bis dort Anpassungsbedarf an
-   logdruid gemeldet wird. Dort wird das bisherige Logging-Modul durch
-   logdruid aus PyPI ersetzt; Importe und Konfigurationsdatei werden
-   umgestellt, und die dortige Doku verweist auf dieses Repository. Als
-   Anleitung dient die deutsche Anwenderdoku
-   `running_implementation_doc/anwenderdoku.md`. Dabei gefundene
-   Unzulänglichkeiten werden hier (in logdruid) behoben.
+1. **`0.1.1`: Felder bei der Weitergabe nicht verlieren** (Fehler gegen
+   Vorgabe 2.1). Über die Pipe gehen je Meldung nur Zeit, Stufe, Prozess,
+   Name, Modul, Funktion, Zeile und Text (`_to_item`/`_write` in
+   `logdruid.py`). Dadurch fehlt `{extra}` (Werte aus `bind()`/
+   `contextualize()`), auch im `main`-Prozess; `{file}`, `{thread}` und
+   `{elapsed}` stimmen nicht; ein Format mit `{extra[...]}` lässt
+   Meldungen verschwinden (am 2026-10-22 beobachtet). Vor der Umsetzung
+   planen, insbesondere wie Werte übertragen werden, die sich nicht
+   pickeln lassen. Danach die Grenze aus der Anwenderdoku (1, 4.4, 5.3, 8)
+   und den englischen Seiten entfernen.
 
-2. **Danach: finale Version `0.1.0` veröffentlichen** (Tag + Release),
-   sobald Schritt 1 sauber durchlief.
+2. **`0.2.0.dev1` beginnen**, nach `0.1.1`, damit ein Zweig reicht:
+   1. Zu Beginn die deutsche Implementierungsdoku auf einen Absatz je
+      Zeile umstellen (globale Regel): `implementierungsdoku.md` und
+      `fahrplan.md`. Ohne inhaltliche Wirkung. Nicht betroffen sind
+      `anwenderdoku.md` (schon so geschrieben) und `docs/*.md` (bei mkdocs
+      übliche Form, fester Umbruch bei etwa 80 Zeichen; Entscheidung vom
+      2026-10-22 nach einer Stichprobe von MkDocs, Material for MkDocs und
+      mkdocstrings).
+   2. **Kritische Fehler samt Rückverfolgung erfassen** nach Kapitel 1.4
+      der Implementierungsdoku: dort nur gesammelt, erst planen, dann
+      umsetzen und in der Anwenderdoku beschreiben. Bis dahin nennt die
+      Anwenderdoku (7.2, 8) einen Behelf mit `logger.catch`.
+   3. **Gemeinsamer Schlüssel für `backtrace` und `diagnose`** auf oberster
+      Ebene der Datei. Er ersetzt die Angaben je Ausgabe, ist also ein
+      Bruch und gehört deshalb in 0.2 (Entscheidung vom 2026-10-22). Heute
+      stehen beide nur in `[output.console]`/`[output.file]`, wirken aber
+      auf beide Ausgaben gemeinsam, weil die Rückverfolgung im meldenden
+      Prozess einmal zu Text wird. Anwenderdoku 5.3 danach anpassen.
 
-## Vorgemerkt für das nächste Release
-
-- **Felder bei der Weitergabe nicht verlieren:** Über die Pipe gehen je
-  Meldung nur Zeit, Stufe, Prozess, Name, Modul, Funktion, Zeile und Text
-  (`_to_item`/`_write` in `logdruid.py`). Dadurch fehlt `{extra}` (Werte
-  aus `bind()`/`contextualize()`), auch im `main`-Prozess; `{file}`,
-  `{thread}` und `{elapsed}` stimmen nicht; ein Format mit
-  `{extra[...]}` lässt Meldungen verschwinden (am 2026-10-22 beobachtet).
-  Die Anwenderdoku (5.3, 8) beschreibt das als Grenze und kündigt die
-  Behebung an; nach der Behebung dort anpassen.
-- **Gemeinsamer Schlüssel für `backtrace` und `diagnose`:** Heute stehen
-  beide nur in `[output.console]`/`[output.file]`, wirken aber auf beide
-  Ausgaben gemeinsam (`diagnose` an, sobald eine Ausgabe es einschaltet;
-  `backtrace` an, solange nicht alle es abschalten), weil die
-  Rückverfolgung im meldenden Prozess einmal zu Text wird. Ein Schlüssel
-  auf oberster Ebene der Datei soll das ausdrücken; Anwenderdoku 5.3
-  danach anpassen.
-- **Markdown-Dateien auf einen Absatz je Zeile umstellen** (globale
-  Regel): `implementierungsdoku.md`, `fahrplan.md`, `README.md`.
-  `anwenderdoku.md` ist schon so geschrieben. Nicht betroffen ist
-  `docs/*.md`: Dort gilt die bei mkdocs übliche Form, fester Umbruch bei
-  etwa 80 Zeichen (Entscheidung vom 2026-10-22, nach einer Stichprobe der
-  Quelltexte von MkDocs, Material for MkDocs und mkdocstrings).
-
-## Vorgemerkt für ein späteres Release
-
-- **Freigabe für die Startmethode `fork`:** bisher nur mit `spawn`
-  geprüft; die Anwenderdoku (2, 4.2, 8) sagt das so und kündigt die
-  Freigabe für später an.
-- **Kritische Fehler samt Rückverfolgung erfassen** (Kapitel 1.4 der
-  Implementierungsdoku). Ursprünglich für `0.1.0.dev2` vor dem ersten
-  Release vorgesehen, dann bewusst herausgenommen — Zeitpunkt offen,
-  nach `0.1.0` neu einzuplanen. Kapitel 1.4 bleibt als Anforderungsskizze
-  stehen, ist aber weiterhin nicht geplant, nur gesammelt. Die
-  Anwenderdoku (7.2, 8) nennt bis dahin einen Behelf mit `logger.catch`.
+3. **Später: Freigabe für die Startmethode `fork`.** Bisher nur mit
+   `spawn` geprüft; die Anwenderdoku (2, 4.2, 8) sagt das so und kündigt
+   die Freigabe für eine spätere Version an.
 
 ## Erledigt
 
@@ -169,3 +154,12 @@
   `dev3`): Ihre Metadaten trugen noch die frühere Autorenangabe samt
   Adresse. Diese beiden Versionsnummern sind damit auf PyPI dauerhaft
   verbraucht.
+- Rückintegration in das Anwenderprojekt abgeschlossen, ohne Fehler
+  (Rückmeldung des Entwicklers vom 2026-10-22). Die Befunde, die dabei
+  nebenbei auffielen (L1–L5), sind mit `0.1.0.dev3` behoben.
+- **`0.1.0` veröffentlicht** (2026-10-22), erste stabile Fassung, Code und
+  Schnittstelle wie `0.1.0.dev3`, Kategorie „Production/Stable". Vor dem
+  Tag liefen `Tests` (3.11–3.13) und `Docs` in der CI grün; lokal fehlte
+  auf dem Rechner `xps` ein passendes Poetry (System-Poetry 1.8.2 liest
+  die `[project]`-Tabelle nicht). `0.1.0.dev3` bleibt auf PyPI stehen;
+  `pip install logdruid` nimmt jetzt `0.1.0`.
