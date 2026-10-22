@@ -9,20 +9,38 @@
    dessen Abhängigkeitsliste) ersetzen, alle `from Vorgängermodul import ...`
    auf `from logdruid import ...` umstellen, `Logging-Konfiguration` zu
    `logdruid.toml` umbenennen, Segment 2.23 und 3.3.9 dort durch
-   Querverweis auf dieses Repository ersetzen. Die deutsche
-   Implementierungsdoku von logdruid dient dabei als Anleitung. Dabei
-   gefundene Unzulänglichkeiten werden hier (in logdruid) behoben.
+   Querverweis auf dieses Repository ersetzen. Als Anleitung dient die
+   deutsche Anwenderdoku `running_implementation_doc/anwenderdoku.md`.
+   Dabei gefundene Unzulänglichkeiten werden hier (in logdruid) behoben.
 
 2. **Danach: finale Version `0.1.0` veröffentlichen** (Tag + Release),
    sobald Schritt 1 sauber durchlief.
 
-## Zurückgestellt, kein fester Platz mehr vor `0.1.0`
+## Vorgemerkt für das nächste Release
 
+- **Felder bei der Weitergabe nicht verlieren:** Über die Pipe gehen je
+  Meldung nur Zeit, Stufe, Prozess, Name, Modul, Funktion, Zeile und Text
+  (`_to_item`/`_write` in `logdruid.py`). Dadurch fehlt `{extra}` (Werte
+  aus `bind()`/`contextualize()`), auch im `main`-Prozess; `{file}`,
+  `{thread}` und `{elapsed}` stimmen nicht; ein Format mit
+  `{extra[...]}` lässt Meldungen verschwinden (am 2026-10-22 beobachtet).
+  Die Anwenderdoku (5.3, 8) beschreibt das als Grenze und kündigt die
+  Behebung an; nach der Behebung dort anpassen.
+- **Markdown-Dateien auf einen Absatz je Zeile umstellen** (globale
+  Regel): `implementierungsdoku.md`, `fahrplan.md`, `README.md`,
+  `docs/*.md`. `anwenderdoku.md` ist schon so geschrieben.
+
+## Vorgemerkt für ein späteres Release
+
+- **Freigabe für die Startmethode `fork`:** bisher nur mit `spawn`
+  geprüft; die Anwenderdoku (2, 4.2, 8) sagt das so und kündigt die
+  Freigabe für später an.
 - **Kritische Fehler samt Rückverfolgung erfassen** (Kapitel 1.4 der
   Implementierungsdoku). Ursprünglich für `0.1.0.dev2` vor dem ersten
-  Release vorgesehen, jetzt bewusst herausgenommen — Zeitpunkt offen,
+  Release vorgesehen, dann bewusst herausgenommen — Zeitpunkt offen,
   nach `0.1.0` neu einzuplanen. Kapitel 1.4 bleibt als Anforderungsskizze
-  stehen, ist aber weiterhin nicht geplant, nur gesammelt.
+  stehen, ist aber weiterhin nicht geplant, nur gesammelt. Die
+  Anwenderdoku (7.2, 8) nennt bis dahin einen Behelf mit `logger.catch`.
 
 ## Erledigt
 
@@ -94,3 +112,7 @@
 - Erster Release-Tag `v0.1.0.dev1` gesetzt und gepusht. `Release`-Workflow
   erfolgreich durchgelaufen; `logdruid` 0.1.0.dev1 ist auf PyPI
   veröffentlicht (über die PyPI-API verifiziert).
+- Deutsche Anwenderdoku `anwenderdoku.md` geschrieben, als Anleitung für
+  die Rückintegration. Ihre Beispiele sind geprüft: alle TOML-Blöcke ohne
+  Warnung, das Beispiel aus 4.6 als Lauf, die Grenzen aus 5.3 und der
+  Behelf mit `logger.catch` aus 7.2 an Proben beobachtet.
