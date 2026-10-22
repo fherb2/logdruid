@@ -6,73 +6,53 @@
 A drop-in logging setup layer for multi-process applications, built on
 [loguru](https://loguru.readthedocs.io/).
 
-logdruid does not replace loguru's API — it uses it unchanged — and adds
-what a multi-process application needs on top: a single, time-ordered
-output across process boundaries, without a lock shared between
-processes, and the ability to take over messages from libraries that
-report through the standard `logging` module.
+**Installation, usage, configuration and API:
+<https://fherb2.github.io/logdruid/>**
 
-## Installation
+## What it is for
 
-```bash
-pip install logdruid
-```
+loguru is a logging library for Python with exactly one global logger. In an
+application with several processes, loguru alone reaches its limits: each
+process started with `spawn` has its own logger with its own outputs; a
+shared output across processes goes through a queue whose lock spans all
+processes, so a process killed hard while holding it can block logging
+everywhere; and messages from libraries that report through the standard
+`logging` module do not appear in loguru's outputs.
 
-Requires Python 3.11 or later.
+logdruid is a setup layer around loguru for exactly this case: applications
+– not libraries – with several processes. It does not build a logging API of
+its own: you keep reporting with loguru's logger, unchanged. logdruid only
+sets it up and adds what loguru does not offer: one shared output for all
+processes, ordered by time, without a lock across process boundaries; taking
+over the messages from `logging`; and a configuration in a file of its own.
 
-## Usage
+For an application with a single process, loguru alone is enough, as it is
+when each process may write to its own file and the order across processes
+does not matter. Libraries should use neither loguru nor logdruid but report
+through `logging`.
 
-Main process, once, before any child process is created:
+## Features
 
-```python
-import logdruid
-from logdruid import logger
+| Feature | loguru alone | with logdruid |
+| --- | --- | --- |
+| Reporting with `logger.info(...)` etc., levels `TRACE` to `CRITICAL` including `SUCCESS` | yes | yes, the same logger and the same API |
+| Console and file, rotation and retention of the file, format, colours | yes | yes, set in the configuration file |
+| Exceptions with extended tracebacks, optionally with variable values | yes | yes |
+| All processes write into one shared output | yes, through a shared queue with a lock across all processes | yes, through a pipe of its own per child process, without a shared lock |
+| A process killed hard does not hold up the others | not guaranteed | yes |
+| Messages of all processes ordered by time | no, order of arrival | yes, with an adjustable time window |
+| Minimum level per name of a message (module, logger) | yes, through a filter | yes |
+| Minimum level per process | no | yes |
+| Taking over messages from `logging` | only as a code example in loguru's documentation | yes, with the logger's name and with level translation per logger |
+| Configuration from a file, precedence defaults < application < file < command line | no, only environment variables | yes |
+| Mistakes in the configuration do not stop the application | no | yes, they only produce a warning |
 
-logdruid.setup(config_path, cli_level=args.log_level)
-logger.success("Logging active")
-```
+## For contributors
 
-Per child process, in the main process:
-
-```python
-link = logdruid.link("worker")
-process = ctx.Process(target=worker, args=(link, ...),
-                       name="worker")
-process.start()
-link.release()
-```
-
-First thing in the child process (after ignoring `SIGINT`):
-
-```python
-logdruid.attach(link)
-```
-
-At the end of the main process, after the children have ended:
-
-```python
-logdruid.shutdown()
-```
-
-Application modules report through `from logdruid import logger` — loguru's
-own global logger, unchanged. Libraries that report through the standard
-`logging` module need no changes of their own; logdruid takes over their
-messages and applies the level translations configured for them.
-
-## Configuration
-
-Everything logdruid-specific lives in a `logdruid.toml` file next to the
-application's entry point. A fully commented example, including how to
-assign levels per process and per logger and how to translate a library's
-levels into the application's own scheme, is in
-[`examples/logdruid.toml`](examples/logdruid.toml).
-
-## Documentation
-
-The full set of project-wide rules and design rationale is in
-[`running_implementation_doc/implementierungsdoku.md`](running_implementation_doc/implementierungsdoku.md)
+Design rules and rationale are in
+[`running_implementation_doc/`](https://github.com/fherb2/logdruid/tree/main/running_implementation_doc)
 (in German).
 
 ## License
 
-MIT, see [`LICENSE`](LICENSE).
+MIT, see [`LICENSE`](https://github.com/fherb2/logdruid/blob/main/LICENSE).
