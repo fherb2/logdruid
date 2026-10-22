@@ -1,12 +1,14 @@
 # Example logging configuration, read by logdruid.
 #
-# Location: next to the entry point, which passes the path. Read with
-# tomllib from the standard library. Mistakes here produce warnings,
-# never an abort; the application then runs with what remains valid.
+# Location: the path the application passes to setup(), or, without one,
+# next to the application's entry point. Read with tomllib from the
+# standard library. Mistakes here produce warnings, never an abort; the
+# application then runs with what remains valid.
 #
 # Layers, lowest first: defaults of logdruid < what the application
-# passes < this file < command line. --log-level replaces every level of
-# this file; translations stay.
+# passes < this file < command line. logdruid does not read the command
+# line itself; a level the application passes as cli_level replaces every
+# level of this file, translations stay.
 
 # Level of every process and every name without a level of its own.
 # Suggested meaning of the levels: TRACE is lasting fine detail of the
