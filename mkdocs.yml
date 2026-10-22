@@ -17,7 +17,12 @@ theme:
 
 nav:
   - Home: index.md
+  - How it works: how-it-works.md
+  - Integration: integration.md
   - Configuration: configuration.md
+  - Libraries using logging: libraries.md
+  - Exceptions and crashes: exceptions.md
+  - Known limitations: limitations.md
   - API reference: api.md
 
 plugins:
@@ -28,6 +33,8 @@ plugins:
           options:
             docstring_style: numpy
             show_source: true
+            show_if_no_docstring: true
+            filters: ["!^_"]
 
 markdown_extensions:
   - admonition

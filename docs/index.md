@@ -1,65 +1,69 @@
 # logdruid
 
 A drop-in logging setup layer for multi-process applications, built on
-[loguru](https://loguru.readthedocs.io/).
+[loguru](https://loguru.readthedocs.io/). This documentation describes
+version 0.1.0.dev1.
 
-logdruid does not replace loguru's API — it uses it unchanged — and adds
-what a multi-process application needs on top: a single, time-ordered
-output across process boundaries, without a lock shared between
-processes, and the ability to take over messages from libraries that
-report through the standard `logging` module.
+## 1 What logdruid is for
 
-## Installation
+loguru is a logging library for Python with exactly one global logger.
+Messages are reported with `logger.info(...)`, `logger.warning(...)` and so
+on; outputs – the console, a file or a function of your own – are attached
+with `logger.add(...)`. Each output has a minimum level, a format given as a
+template with fields such as `{time}`, `{level}`, `{name}` and `{message}`,
+and optionally a filter.
+
+In an application with several processes, loguru alone reaches its limits. A
+process started with the `spawn` start method has its own global logger with
+its own outputs. For all processes to write into one shared file, loguru
+offers a shared queue (`enqueue=True`); writing to it takes a lock that spans
+all processes on Linux. If a process is killed hard while holding that lock,
+every later logging call in every process hangs. Moreover, messages from
+libraries that report through the standard library's `logging` module do not
+appear in loguru's outputs.
+
+logdruid is a setup layer around loguru for exactly this case: applications –
+not libraries – with several processes. It does not build a logging API of
+its own: you keep reporting with loguru's logger, unchanged. logdruid only sets
+it up and adds what loguru does not offer: one shared output for all
+processes, ordered by time, without a lock across process boundaries; taking
+over the messages from `logging`; and a configuration in a file of its own.
+
+For an application with a single process, loguru alone is enough; several
+threads in one process are no problem for loguru either. loguru is also enough
+when each process may write to its own file and the order across processes
+does not matter. Libraries should use neither loguru nor logdruid but report
+through `logging`; the application that uses them takes over their messages
+([section 6](libraries.md)).
+
+| Feature | loguru alone | with logdruid |
+| --- | --- | --- |
+| Reporting with `logger.info(...)` etc., levels `TRACE` to `CRITICAL` including `SUCCESS` | yes | yes, the same logger and the same API |
+| Console and file, rotation and retention of the file, format, colours | yes | yes, set in the configuration file |
+| Exceptions with extended tracebacks, optionally with variable values | yes | yes; variable values are off by default |
+| All processes write into one shared output | yes, through a shared queue with a lock across all processes | yes, through a pipe of its own per child process, without a shared lock |
+| A process killed hard does not hold up the others | not guaranteed, see above | yes |
+| Messages of all processes ordered by time | no, order of arrival | yes, with an adjustable time window |
+| Minimum level per name of a message (module, logger) | yes, through a filter | yes |
+| Minimum level per process | no | yes |
+| Taking over messages from `logging` | only as a code example in loguru's documentation | yes, with the logger's name and with level translation per logger |
+| Configuration from a file, precedence defaults < application < file < command line | no, only environment variables | yes |
+| Mistakes in the configuration do not stop the application | no, an unknown level aborts with `ValueError` | yes, they only produce a warning |
+| Extra fields from `bind()` and `contextualize()` in the output | yes | not at present, they are lost on the way; to be fixed in an upcoming version |
+
+## 2 Installation and requirements
 
 ```bash
 pip install logdruid
 ```
 
-Requires Python 3.11 or later.
+logdruid needs Python 3.11 or later and brings loguru 0.7.3 or later as a
+dependency.
 
-## Usage
+logdruid is tested and released for child processes started with the `spawn`
+start method (`multiprocessing.get_context("spawn")`). It is not tested with
+`fork`; a release for it follows in a later version. It is tested on Linux
+with Python 3.11, 3.12 and 3.13.
 
-Main process, once, before any child process is created:
-
-```python
-import logdruid
-from logdruid import logger
-
-logdruid.setup(config_path, cli_level=args.log_level)
-logger.success("Logging active")
-```
-
-Per child process, in the main process:
-
-```python
-link = logdruid.link("worker")
-process = ctx.Process(target=worker, args=(link, ...),
-                       name="worker")
-process.start()
-link.release()
-```
-
-First thing in the child process (after ignoring `SIGINT`):
-
-```python
-logdruid.attach(link)
-```
-
-At the end of the main process, after the children have ended:
-
-```python
-logdruid.shutdown()
-```
-
-Application modules report through `from logdruid import logger` — loguru's
-own global logger, unchanged. Libraries that report through the standard
-`logging` module need no changes of their own; logdruid takes over their
-messages and applies the level translations configured for them.
-
-See [Configuration](configuration.md) for the `logdruid.toml` format, and
-the [API reference](api.md) for every public function and class.
-
-## License
-
-MIT, see [`LICENSE`](https://github.com/fherb2/logdruid/blob/main/LICENSE)
-in the repository.
+The following pages build on each other in the order of the navigation: each
+one only assumes what the pages before it explain.
