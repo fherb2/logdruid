@@ -137,3 +137,12 @@
   Docstrings). Geprüft: Build `--strict`, alle Sprunganker, TOML-Beispiele
   ohne Warnung. Ohne Korrekturlesen durch den Entwickler veröffentlicht,
   auf dessen Wunsch; Rückmeldungen kommen aus der Rückintegration.
+- `examples/logdruid.toml`: auch die übrigen Hinweise zur Kommandozeile
+  und zum Fundort im Kopfkommentar berichtigt.
+- README auf Projektbeschreibung und Merkmalstabelle reduziert;
+  Installation, Verwendung, Konfiguration und API stehen nur noch auf der
+  Website, damit die README nicht von der Doku abweichen kann. Links
+  absolut, damit sie auch auf PyPI funktionieren.
+- `0.1.0.dev2` veröffentlicht: gleicher Code wie `dev1`, bringt die neue
+  README nach PyPI. `pip install logdruid` nimmt die Dev-Version, solange
+  es keine stabile gibt (mit `pip download` geprüft).
