@@ -1,6 +1,6 @@
 # logdruid – Anwenderdokumentation
 
-Stand: Version 0.1.0.dev1
+Stand: Version 0.1.0.dev3
 
 ## 1 Wozu logdruid da ist
 
@@ -36,6 +36,8 @@ pip install logdruid
 logdruid braucht Python 3.11 oder neuer und bringt loguru ab Version 0.7.3 als Abhängigkeit mit.
 
 Geprüft und freigegeben ist logdruid für Kindprozesse, die mit der Startmethode `spawn` entstehen (`multiprocessing.get_context("spawn")`). Mit `fork` ist es nicht geprüft; eine Freigabe dafür folgt in einer späteren Version. Geprüft ist es unter Linux mit Python 3.11, 3.12 und 3.13.
+
+**Versionen und Stabilität.** Die Versionsnummer folgt Semantic Versioning. Die Fassungen vor `0.1.0` sind Entwicklungsfassungen (`0.1.0.devN`); bis dahin kann sich noch alles ändern, die Schnittstelle wie das Format der Konfigurationsdatei. Ab `0.1.0` kündigt, solange die erste Zahl `0` ist, eine neue zweite Zahl eine Änderung an, die bestehende Anwendungen anpassen müssen; eine neue dritte Zahl bricht nichts. Welche Namen zur Schnittstelle gehören, steht am Anfang von Kapitel 9; jede Änderung daran und am Format der Datei steht im Änderungsprotokoll `CHANGELOG.md` im Repository.
 
 ## 3 Wie logdruid arbeitet
 
@@ -83,7 +85,7 @@ logger.success("Logging aktiv")
 - Es legt Konsole und Datei nach der Konfiguration an und startet den sammelnden Thread.
 - Es übernimmt `logging` und ersetzt dabei alle Handler an der Wurzel von `logging` (Kapitel 6).
 - Es meldet `shutdown()` bei `atexit` an (Kapitel 4.5).
-- Zuletzt meldet es Probleme der Konfiguration als Warnungen, sobald es eine Ausgabe gibt.
+- Zuletzt meldet es Probleme der Konfiguration als Warnungen, sobald es eine Ausgabe gibt (Kapitel 5.7).
 
 Was vor `setup()` gemeldet wird, geht noch über die Vorgabe-Ausgabe von loguru auf `stderr`.
 
@@ -211,7 +213,7 @@ Liegt neben diesem Skript keine `logdruid.toml`, warnt logdruid einmal, dass die
 
 Die Konfiguration steht in einer eigenen Datei im Format TOML, getrennt von der übrigen Konfiguration der Anwendung. Ihren Pfad übergibt die Anwendung als ersten Parameter von `setup()`; ein relativer Pfad gilt relativ zum Arbeitsverzeichnis.
 
-Ohne Pfad sucht logdruid eine Datei namens `logdruid.toml` im Verzeichnis des Einstiegspunkts der Anwendung (`sys.modules["__main__"].__file__`), nicht im Arbeitsverzeichnis. Hat die Anwendung keinen Einstiegspunkt als Datei, etwa bei `python -c`, sucht logdruid nichts und warnt. Wird die Anwendung über einen Einstiegspunkt eines Pakets gestartet (`[project.scripts]`), ist `__main__` vermutlich das dafür erzeugte Startskript im `bin`-Ordner der Umgebung (nicht geprüft); dort liegt keine `logdruid.toml`, solche Anwendungen übergeben den Pfad deshalb ausdrücklich.
+Ohne Pfad sucht logdruid eine Datei namens `logdruid.toml` im Verzeichnis des Einstiegspunkts der Anwendung (`sys.modules["__main__"].__file__`), nicht im Arbeitsverzeichnis. Hat die Anwendung keinen Einstiegspunkt als Datei, etwa bei `python -c`, sucht logdruid nichts und warnt. Wird die Anwendung als Paket installiert und über einen Einstiegspunkt gestartet (`[project.scripts]`), übergibt sie den Pfad ausdrücklich.
 
 Fehlt die Datei oder lässt sie sich nicht lesen, warnt logdruid und arbeitet mit dem, was die Anwendung übergeben hat, und mit seinen Vorgaben weiter. Kindprozesse suchen nie selbst, sie bekommen die aufgelöste Konfiguration mit dem `LogLink`.
 
@@ -345,9 +347,11 @@ Die Vorgaben von logdruid:
 
 ### 5.7 Fehler in der Konfiguration
 
-Ein Fehler in der Konfiguration hält die Anwendung nie an. logdruid übergeht den fehlerhaften Wert, arbeitet mit dem Rest und meldet jeden Fehler als Warnung des `main`-Prozesses, sobald es eine Ausgabe gibt; die Warnungen stehen damit auch in der Logdatei. An loguru gehen nur gültige Werte.
+Ein Fehler in der Konfiguration hält die Anwendung nie an. logdruid übergeht den fehlerhaften Wert, arbeitet mit dem Rest und meldet jeden Fehler als Warnung, sobald es eine Ausgabe gibt. An loguru gehen nur gültige Werte.
 
 Warnungen entstehen für: eine fehlende, unlesbare oder fehlerhafte Datei, einen unbekannten Schlüssel, einen unbekannten Stufennamen, einen unbekannten oder nicht zugelassenen Schlüssel einer Ausgabe, eine Datei-Ausgabe ohne `path`, keine eingeschaltete Ausgabe, eine Ausgabe, die sich nicht anlegen lässt, ein ungültiges `sort_window_ms` und eine ungültige Übersetzung (Kapitel 6).
+
+**Woran man die Warnungen von logdruid erkennt.** Sie stehen auf der Stufe `WARNING` unter dem Namen `logdruid` (im Format das Feld `{name}`) und tragen den Prozessnamen des `main`-Prozesses. Die Mindeststufen aus Kapitel 5.4 und 5.5 wirken auf sie nicht: Auch mit `std_level = "ERROR"`, mit `cli_level` oder mit einem Eintrag `[loggers.logdruid]` erscheinen sie, in jeder eingeschalteten Ausgabe. Sie werden sofort geschrieben, ohne das Zeitfenster aus Kapitel 3. Dasselbe gilt für die Warnungen, die logdruid während des Laufs zur Übertragung ausgibt (Kapitel 4.5 und 7.4).
 
 ### 5.8 Eine vollständige Datei
 
@@ -384,6 +388,26 @@ translate = { DEBUG = "TRACE" }
 ```
 
 Eine ausführlich kommentierte Fassung auf Englisch liegt im Repository unter `examples/logdruid.toml`.
+
+### 5.9 Konfiguration prüfen
+
+Ob eine Konfiguration fehlerfrei ist, lässt sich prüfen, ohne etwas einzurichten, etwa in einem Test der Anwendung oder in ihrer CI:
+
+```python
+import unittest
+from pathlib import Path
+
+import logdruid
+
+
+class LoggingConfigTest(unittest.TestCase):
+
+    def test_the_shipped_configuration_has_no_mistakes(self):
+        path = Path(__file__).parent.parent / "myapp" / "logdruid.toml"
+        self.assertEqual(logdruid.check_config(path), [])
+```
+
+`logdruid.check_config()` nimmt dieselben Parameter wie `setup()` für die Konfiguration – `config_path`, `defaults`, `cli_level`, `cli_log_file` – und löst dieselben vier Ebenen auf (Kapitel 5.5). Zurück kommt die Liste der Warnungen, die `setup()` dazu ausgeben würde, leer bei einer fehlerfreien Konfiguration. Es legt keine Ausgabe an und ändert nichts am Logger. Deshalb erkennt es nicht, ob sich eine Ausgabe tatsächlich anlegen lässt, etwa ob der Pfad der Logdatei beschreibbar ist; das zeigt erst `setup()`.
 
 ## 6 Bibliotheken einbinden, die über `logging` melden
 
@@ -425,7 +449,7 @@ Eine Ausnahme, die die Anwendung selbst meldet – mit `logger.exception(...)` o
 Eine Ausnahme, die niemand abfängt, erreicht das Logging derzeit nicht – das ist eine Grenze dieser Version, eine kommende Version schließt sie:
 
 - Im Hauptthread schreibt Python sie über `sys.excepthook` auf `stderr`, in anderen Threads über `threading.excepthook`.
-- In einem Kindprozess schreibt `multiprocessing` selbst „Process <Name>:" und die Rückverfolgung direkt auf `stderr`: ungeordnet, nicht im Format der Ausgabe und nicht in der Datei.
+- In einem Kindprozess schreibt `multiprocessing` selbst `Process <Name>:` und die Rückverfolgung direkt auf `stderr`: ungeordnet, nicht im Format der Ausgabe und nicht in der Datei.
 
 Für Kindprozesse gibt es mit loguru schon heute einen Behelf: die Prozessfunktion mit `logger.catch` umschließen.
 
@@ -440,7 +464,7 @@ def worker(link, ...):
     ...
 ```
 
-Geprüft mit Version 0.1.0.dev1, `spawn` und Linux: Die Ausnahme erscheint mit ihrer Rückverfolgung als `CRITICAL`-Meldung des Kindprozesses geordnet in der Ausgabe, der Prozess endet mit Exit-Code 1, und `multiprocessing` schreibt nichts zusätzlich auf `stderr`. Ohne `onerror` wird die Ausnahme ebenso gemeldet, der Prozess endet aber mit Exit-Code 0, und der `main`-Prozess kann den Fehler nicht erkennen. Der Text, den `logger.catch` voranstellt, nennt als Funktion `run` von `multiprocessing`, nicht die Prozessfunktion; mit dem Parameter `message="..."` lässt er sich ersetzen. Eine Ausnahme vor `attach()` geht noch über die Vorgabe-Ausgabe von loguru auf `stderr`.
+Geprüft mit `spawn` unter Linux: Die Ausnahme erscheint mit ihrer Rückverfolgung als `CRITICAL`-Meldung des Kindprozesses geordnet in der Ausgabe, der Prozess endet mit Exit-Code 1, und `multiprocessing` schreibt nichts zusätzlich auf `stderr`. Ohne `onerror` wird die Ausnahme ebenso gemeldet, der Prozess endet aber mit Exit-Code 0, und der `main`-Prozess kann den Fehler nicht erkennen. Der Text, den `logger.catch` voranstellt, nennt als Funktion `run` von `multiprocessing`, nicht die Prozessfunktion; mit dem Parameter `message="..."` lässt er sich ersetzen. Eine Ausnahme vor `attach()` geht noch über die Vorgabe-Ausgabe von loguru auf `stderr`.
 
 Im `main`-Prozess fängt die Anwendung eine Ausnahme, die sie nicht fortsetzen lässt, mit `try` und `except` selbst und meldet sie mit `logger.opt(exception=True).critical(...)`.
 
@@ -450,7 +474,7 @@ Wird ein Prozess mit `SIGKILL` beendet, vom Speicherwächter des Systems beendet
 
 ### 7.4 Abgebrochene Übertragung
 
-Bricht ein Kindprozess mitten im Schreiben einer Meldung ab, bleibt eine halbe Meldung in der Pipe. Der `main`-Prozess gibt diese Pipe dann auf und warnt „Logging pipe of <Name> broke off (…); later messages of that process are lost". Die übrigen Pipes sind davon nicht betroffen. Ein möglicher Anlass ist `SIGINT` aus einem Strg+C (Kapitel 4.3).
+Bricht ein Kindprozess mitten im Schreiben einer Meldung ab, bleibt eine halbe Meldung in der Pipe. Der `main`-Prozess gibt diese Pipe dann auf und warnt unter dem Namen `logdruid` (Kapitel 5.7): `Logging pipe of <Name> broke off (…); later messages of that process are lost`. Die übrigen Pipes sind davon nicht betroffen. Ein möglicher Anlass ist `SIGINT` aus einem Strg+C (Kapitel 4.3).
 
 ## 8 Bekannte Grenzen dieser Version
 
@@ -465,7 +489,7 @@ Zusammengefasst, was die Kapitel davor an Ort und Stelle schon nennen:
 
 ## 9 API-Referenz
 
-Alle öffentlichen Namen werden aus dem Paket importiert: `import logdruid` bzw. `from logdruid import logger, LogLink`.
+Zur öffentlichen Schnittstelle gehören genau die Namen dieses Kapitels: `logger`, `setup`, `check_config`, `link`, `attach`, `shutdown`, `LogLink` und `CONFIG_FILE_NAME`. Von `LogLink` sind nur der Typ und `release()` öffentlich. Alles andere ist intern und kann sich ohne Ankündigung ändern; was „Ankündigung" heißt, steht unter „Versionen und Stabilität" in Kapitel 2. Importiert wird aus dem Paket: `import logdruid` bzw. `from logdruid import logger, LogLink`.
 
 ### `logger`
 
@@ -482,6 +506,10 @@ Richtet das Logging im `main`-Prozess ein. Einmal aufzurufen, bevor ein Kindproz
 | `cli_level` | `str`, wahlweise | Stufe von der Kommandozeile; ersetzt jede Stufe aus Datei und Anwendung, Übersetzungen bleiben. |
 | `cli_log_file` | `str`, wahlweise | Logdatei von der Kommandozeile; wirkt nur, wenn die Datei-Ausgabe eingeschaltet ist. |
 | `process_name` | `str` | Name des `main`-Prozesses in seinen Meldungen, Vorgabe `main`. |
+
+### `check_config(config_path=None, *, defaults=None, cli_level=None, cli_log_file=None)`
+
+Prüft eine Konfiguration, ohne etwas einzurichten (Kapitel 5.9). Die Parameter bedeuten dasselbe wie bei `setup()`. Gibt die Liste der Warnungen zurück, die `setup()` dazu ausgeben würde, als `list` von `str`; leer bei einer fehlerfreien Konfiguration. Ob sich eine Ausgabe tatsächlich anlegen lässt, erkennt erst `setup()`.
 
 ### `link(process_name)`
 
@@ -507,19 +535,9 @@ Schreibt alles aus und beendet den sammelnden Thread; nur im `main`-Prozess, nac
 
 ### `LogLink`
 
-Was ein Kindprozess braucht, um in den `main`-Prozess zu melden. Entsteht durch `link()`, die Anwendung legt es nicht selbst an.
-
-| Attribut | Bedeutung |
-| --- | --- |
-| `process_name` | Name, den der Kindprozess in seinen Meldungen trägt |
-| `conn` | Schreibende der Pipe dieses Kindprozesses |
-| `settings` | aufgelöste Konfiguration des `main`-Prozesses (`Settings`) |
+Was ein Kindprozess braucht, um in den `main`-Prozess zu melden. Entsteht durch `link()`; die Anwendung legt es nicht selbst an und reicht es nur an den Kindprozess weiter. Seine Felder sind intern.
 
 **`release()`** schließt die Kopie des Schreibendes, die der `main`-Prozess hält. Direkt nach dem Start des Kindprozesses aufzurufen; ohne diesen Aufruf endet die Pipe nie, und `shutdown()` wartet vergeblich.
-
-### `Settings`
-
-Die aufgelöste Konfiguration, wie sie mit dem `LogLink` in den Kindprozess geht. Entsteht in `setup()`; die Anwendung legt sie nicht selbst an und verändert sie nicht. Attribute: `layers` (die Stufen und Übersetzungen je Ebene, höchste zuerst), `sort_window_s` (Zeitfenster in Sekunden), `outputs` (die eingeschalteten Ausgaben mit ihren Parametern für `logger.add()`), `backtrace` und `diagnose`.
 
 ### `CONFIG_FILE_NAME`
 
