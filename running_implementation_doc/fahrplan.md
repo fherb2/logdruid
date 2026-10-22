@@ -2,26 +2,29 @@
 
 ## Noch offen
 
-1. **GitHub Pages in den Repo-Settings aktivieren** (Settings → Pages →
-   Source: „GitHub Actions") — ohne das läuft `docs.yml` ins Leere. Vom
-   Entwickler per Hand zu erledigen, wie die Rulesets vorhin.
+1. **Ersten Release-Tag setzen** (`v0.1.0.dev1`), Trusted Publisher ist
+   registriert, GitHub Pages aktiviert — nichts Technisches steht mehr
+   im Weg.
 
-2. **Ersten Release-Tag setzen** (`v0.1.0.dev1`), Trusted Publisher ist
-   registriert.
-
-3. **Kritische Fehler samt Rückverfolgung erfassen**, nach Kapitel 1.4 der
-   Implementierungsdoku: Anforderungen dort sind nur gesammelt, nicht
-   geplant — erst planen (eigener Planungsschritt), dann implementieren,
-   dann in der Anwenderdokumentation beschreiben, wie eine Nutzeranwendung
-   das Merkmal einbaut. Ergebnis: Version `0.1.0.dev2`.
-
-4. **Rückintegration in `Anwenderprojekt`:** `dortiges Logging-Modul`
+2. **Rückintegration in `Anwenderprojekt`:** `dortiges Logging-Modul`
    durch `pip install logdruid` (bzw. Eintrag in dessen
    Abhängigkeitsliste) ersetzen, alle `from Vorgängermodul import ...` auf
    `from logdruid import ...` umstellen, `Logging-Konfiguration` zu
    `logdruid.toml` umbenennen, Segment 2.23 und 3.3.9 dort durch
-   Querverweis auf dieses Repository ersetzen. Eigener, später
-   anzugehender Schritt — nicht Teil der aktuellen Arbeit hier.
+   Querverweis auf dieses Repository ersetzen. Die deutsche
+   Implementierungsdoku von logdruid dient dabei als Anleitung. Dabei
+   gefundene Unzulänglichkeiten werden hier behoben.
+
+3. **Danach: finale Version `0.1.0` veröffentlichen** (Tag + Release),
+   sobald Schritt 2 sauber durchlief.
+
+## Zurückgestellt, kein fester Platz mehr vor `0.1.0`
+
+- **Kritische Fehler samt Rückverfolgung erfassen** (Kapitel 1.4 der
+  Implementierungsdoku). Ursprünglich für `0.1.0.dev2` vor dem ersten
+  Release vorgesehen, jetzt bewusst herausgenommen — Zeitpunkt offen,
+  nach `0.1.0` neu einzuplanen. Kapitel 1.4 bleibt als Anforderungsskizze
+  stehen, ist aber weiterhin nicht geplant, nur gesammelt.
 
 ## Erledigt
 
@@ -86,3 +89,5 @@
   `site/` in `.gitignore`. Ein Versions-Bug (`mkdocstrings` vs.
   `mkdocstrings-python`) korrigiert, Build lokal verifiziert
   (`poetry run mkdocs build --strict`, alle drei Seiten geprüft).
+- GitHub Pages aktiviert (Settings → Pages → Source: „GitHub Actions") —
+  vom Entwickler selbst ausgeführt.
