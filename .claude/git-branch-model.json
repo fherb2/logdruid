@@ -1,0 +1,15 @@
+{
+  "integration_branch": "dev",
+  "release_branch": "main",
+  "release_transfer": "merge",
+  "management_branch": "repo-management",
+  "management_files": [
+    ".gitignore",
+    "poetry.toml",
+    "LICENSE",
+    ".github/workflows/tests.yml",
+    ".github/workflows/docs.yml",
+    ".github/workflows/release.yml",
+    ".claude/git-branch-model.json"
+  ]
+}
