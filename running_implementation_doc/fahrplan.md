@@ -26,6 +26,13 @@
   `{extra[...]}` lässt Meldungen verschwinden (am 2026-10-22 beobachtet).
   Die Anwenderdoku (5.3, 8) beschreibt das als Grenze und kündigt die
   Behebung an; nach der Behebung dort anpassen.
+- **Gemeinsamer Schlüssel für `backtrace` und `diagnose`:** Heute stehen
+  beide nur in `[output.console]`/`[output.file]`, wirken aber auf beide
+  Ausgaben gemeinsam (`diagnose` an, sobald eine Ausgabe es einschaltet;
+  `backtrace` an, solange nicht alle es abschalten), weil die
+  Rückverfolgung im meldenden Prozess einmal zu Text wird. Ein Schlüssel
+  auf oberster Ebene der Datei soll das ausdrücken; Anwenderdoku 5.3
+  danach anpassen.
 - **Markdown-Dateien auf einen Absatz je Zeile umstellen** (globale
   Regel): `implementierungsdoku.md`, `fahrplan.md`, `README.md`,
   `docs/*.md`. `anwenderdoku.md` ist schon so geschrieben.
