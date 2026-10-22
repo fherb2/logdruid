@@ -2,34 +2,25 @@
 
 ## Noch offen
 
-1. **`dev`-Abhängigkeiten in Poetry ergänzen**, sobald feststeht, welche
-   gebraucht werden (z. B. ein Lint-/Formatierungstool, siehe Chat vom
-   2026-10-21 — das ist keine PyPI-Vorgabe, sondern eigene Wahl).
+1. **PyPI Trusted Publisher registrieren** (`pypi.org/manage/account/publishing/`,
+   „pending publisher"), mit dem Workflow-Dateinamen
+   `.github/workflows/release.yml` und Environment-Name `pypi` — erst
+   wirksam ab dem ersten Release-Tag.
 
-2. **CI aufsetzen:** `.github/workflows/`, mindestens ein Job, der bei jedem
-   Push Tests läuft, und ein Job, der bei einem `v*`-Tag das Wheel baut und
-   per PyPI Trusted Publishing hochlädt (OIDC, `id-token: write`,
-   `pypa/gh-action-pypi-publish`).
+2. **Vor dem Release:** 2FA auf dem PyPI-Konto aktivieren (seit 2024 für
+   jedes Konto Pflicht, nicht nur für kritische Projekte). `twine check
+   dist/*` läuft bereits automatisch im Release-Workflow.
 
-3. **PyPI Trusted Publisher registrieren** (`pypi.org/manage/account/publishing/`,
-   „pending publisher"), mit dem exakten Workflow-Dateinamen aus Schritt 2 —
-   erst möglich, wenn dieser feststeht, und vor dem ersten Release-Tag.
-
-4. **Vor dem Release:** `twine check dist/*` laufen lassen (prüft, ob das
-   README als Beschreibung korrekt rendert — PyPI zeigt sonst nur den
-   Rohtext); 2FA auf dem PyPI-Konto aktivieren (seit 2024 für jedes Konto
-   Pflicht, nicht nur für kritische Projekte).
-
-5. **Dokumentation entscheiden:** mkdocs (mit mkdocstrings) oder Sphinx.
+3. **Dokumentation entscheiden:** mkdocs (mit mkdocstrings) oder Sphinx.
    Offener Punkt dabei: Das mkdocs-Ökosystem ist 2026 im Umbruch (Material
    for MkDocs geht in den Wartungsmodus zugunsten des Nachfolgers
    „Zensical", der noch Alpha ist) — vor einer Festlegung prüfen, ob das
    noch aktuell ist.
 
-6. **Ersten Release-Tag setzen** (`v0.1.0` o. Ä.), sobald CI und Trusted
-   Publisher stehen.
+4. **Ersten Release-Tag setzen** (`v0.1.0.dev1` o. Ä.), sobald der
+   Trusted Publisher registriert ist.
 
-7. **Rückintegration in `Anwenderprojekt`:** `dortiges Logging-Modul`
+5. **Rückintegration in `Anwenderprojekt`:** `dortiges Logging-Modul`
    durch `pip install logdruid` (bzw. Eintrag in dessen
    Abhängigkeitsliste) ersetzen, alle `from Vorgängermodul import ...` auf
    `from logdruid import ...` umstellen, `Logging-Konfiguration` zu
@@ -66,3 +57,14 @@
   grün im Poetry-venv.
 - Commit-Modus für diese Sitzung geklärt: `direct` auf `main`.
 - Erster Commit (`0dde9f3`), gepusht nach `origin/main`.
+- Version auf `0.1.0.dev1` gesetzt (PEP 440, kanonisch — `0.1.0dev1` wäre
+  äquivalent normalisiert worden).
+- CI aufgesetzt: `.github/workflows/tests.yml` (Matrix `py311`–`py313`
+  über `tox`/`tox-gh`) und `.github/workflows/release.yml` (Build, `twine
+  check`, Veröffentlichung über PyPI Trusted Publishing bei `v*`-Tag,
+  Environment `pypi`).
+- `tox`/`tox-gh` als Poetry-`dev`-Gruppe eingetragen (`pyproject.toml`,
+  `poetry.lock`), damit lokal und in der CI dieselbe Fassung läuft; CI
+  nutzt jetzt `poetry install --only dev` statt eines rohen `pip install`.
+  Lokal verifiziert: `poetry run tox -e py312` grün.
+- Badges in README.md (PyPI-Version, Testlauf-Status).

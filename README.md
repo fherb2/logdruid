@@ -1,5 +1,8 @@
 # logdruid
 
+[![PyPI version](https://img.shields.io/pypi/v/logdruid.svg)](https://pypi.org/project/logdruid/)
+[![Tests](https://github.com/fherb2/logdruid/actions/workflows/tests.yml/badge.svg)](https://github.com/fherb2/logdruid/actions/workflows/tests.yml)
+
 A drop-in logging setup layer for multi-process applications, built on
 [loguru](https://loguru.readthedocs.io/).
 

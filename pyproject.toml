@@ -19,3 +19,7 @@ dependencies = [
 
 [tool.poetry]
 packages = [{ include = "logdruid", from = "src" }]
+
+[tool.poetry.group.dev.dependencies]
+tox = "^4.0"
+tox-gh = "^1.0"
