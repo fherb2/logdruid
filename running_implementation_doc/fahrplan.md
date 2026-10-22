@@ -2,25 +2,16 @@
 
 ## Noch offen
 
-1. **`0.1.1`: Felder bei der Weitergabe nicht verlieren** (Fehler gegen
-   Vorgabe 2.1). Über die Pipe gehen je Meldung nur Zeit, Stufe, Prozess,
-   Name, Modul, Funktion, Zeile und Text (`_to_item`/`_write` in
-   `logdruid.py`). Dadurch fehlt `{extra}` (Werte aus `bind()`/
-   `contextualize()`), auch im `main`-Prozess; `{file}`, `{thread}` und
-   `{elapsed}` stimmen nicht; ein Format mit `{extra[...]}` lässt
-   Meldungen verschwinden (am 2026-10-22 beobachtet). Vor der Umsetzung
-   planen, insbesondere wie Werte übertragen werden, die sich nicht
-   pickeln lassen. Danach die Grenze aus der Anwenderdoku (1, 4.4, 5.3, 8)
-   und den englischen Seiten entfernen.
-
-2. **`0.2.0.dev1` beginnen**, nach `0.1.1`, damit ein Zweig reicht:
+1. **`0.2.0.dev1` beginnen** auf `dev`:
    1. Zu Beginn auf einen Absatz je Zeile umstellen (globale Regel):
       `implementierungsdoku.md`, `fahrplan.md` und `README.md`. Ohne
-      inhaltliche Wirkung. Nicht betroffen sind
-      `anwenderdoku.md` (schon so geschrieben) und `docs/*.md` (bei mkdocs
-      übliche Form, fester Umbruch bei etwa 80 Zeichen; Entscheidung vom
-      2026-10-22 nach einer Stichprobe von MkDocs, Material for MkDocs und
-      mkdocstrings).
+      inhaltliche Wirkung. Dabei die deutschen Anführungszeichen paarweise
+      setzen: 19 Stellen in `implementierungsdoku.md` und `fahrplan.md`
+      schließen mit einem ASCII-Zeichen statt mit `“` (gezählt am
+      2026-10-23). Nicht betroffen sind `anwenderdoku.md` (schon so
+      geschrieben) und `docs/*.md` (bei mkdocs übliche Form, fester
+      Umbruch bei etwa 80 Zeichen; Entscheidung vom 2026-10-22 nach einer
+      Stichprobe von MkDocs, Material for MkDocs und mkdocstrings).
    2. **Kritische Fehler samt Rückverfolgung erfassen** nach Kapitel 1.4
       der Implementierungsdoku: dort nur gesammelt, erst planen, dann
       umsetzen und in der Anwenderdoku beschreiben. Bis dahin nennt die
@@ -32,7 +23,7 @@
       auf beide Ausgaben gemeinsam, weil die Rückverfolgung im meldenden
       Prozess einmal zu Text wird. Anwenderdoku 5.3 danach anpassen.
 
-3. **Später: Freigabe für die Startmethode `fork`.** Bisher nur mit
+2. **Später: Freigabe für die Startmethode `fork`.** Bisher nur mit
    `spawn` geprüft; die Anwenderdoku (2, 4.2, 8) sagt das so und kündigt
    die Freigabe für eine spätere Version an.
 
@@ -178,3 +169,11 @@
   geändert. `pyproject.toml`, `CHANGELOG.md` und `README.md` gehören
   nicht dazu, weil sie sich mit der Entwicklung ändern. `tests.yml`
   läuft nicht auf `repo-management`.
+- **`0.1.1` veröffentlicht** (2026-10-23): `extra` (Werte aus `bind()`/
+  `contextualize()`), `{file}`, `{thread}` und `{elapsed}` kommen so an,
+  wie der meldende Prozess sie gesetzt hat; ein Wert aus einem
+  Kindprozess, der sich nicht pickeln lässt, kommt als `str()` an
+  (Implementierungsdoku 3.1.4). `FieldsTest` prüft das; alle vier Tests
+  scheitern mit dem Code von 0.1.0. Erste Release-Übernahme nach dem
+  Zweigmodell: `dev` per Fast-Forward nach `main`, Tag `v0.1.1` auf dem
+  in der CI geprüften Commit.
