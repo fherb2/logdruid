@@ -39,7 +39,7 @@ diagnose = false
 [output.file]
 enabled = false
 # A relative path is taken as relative to the working directory the
-# application was started from. Can be overridden with --log-file.
+# application was started from.
 path = "app.log"
 # Rotated at this size; this many rotated files are kept.
 rotation = "10 MB"
