@@ -321,8 +321,11 @@ Die Werte kommen aus vier Ebenen, von unten nach oben: Vorgaben von logdruid,
 `std_level` alle Namen und Prozesse, die dort keine eigene Stufe haben. Das
 Ergebnis einer höheren Ebene ersetzt das der niedrigeren, je Feld: Eine Stufe
 aus der Datei ersetzt die Stufen der API, lässt deren Übersetzungen aber
-stehen. Auf der Kommandozeile heißt `std_level` `--log-level` und ersetzt
-damit alle Stufen.
+stehen. logdruid liest die Kommandozeile nicht selbst: Die Anwendung wertet
+ihre Argumente aus und übergibt die Werte an `setup()` als `cli_level`, das
+als `std_level` der obersten Ebene alle Stufen ersetzt, und als
+`cli_log_file`, den Pfad der Datei-Ausgabe, der nur wirkt, wenn diese
+eingeschaltet ist.
 
 Fehler in der Konfiguration — eine unbekannte Stufe, ein unbekannter
 Schlüssel, eine fehlende Datei — erzeugen eine Warnung, keinen Abbruch; an
