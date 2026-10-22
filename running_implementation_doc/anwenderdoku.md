@@ -1,6 +1,6 @@
 # logdruid – Anwenderdokumentation
 
-Stand: Version 0.1.0
+Stand: Version 0.1.1
 
 ## 1 Wozu logdruid da ist
 
@@ -25,7 +25,7 @@ Für eine Anwendung mit nur einem Prozess reicht loguru allein; auch mehrere Thr
 | Meldungen aus `logging` übernehmen | nur als Codebeispiel in der Doku von loguru | ja, mit dem Namen des Loggers und mit Übersetzung der Stufen je Logger |
 | Konfiguration aus einer Datei, Rangfolge Vorgaben < Anwendung < Datei < Kommandozeile | nein, nur Umgebungsvariablen | ja |
 | Fehler in der Konfiguration halten die Anwendung nicht an | nein, eine unbekannte Stufe bricht mit `ValueError` ab | ja, sie erzeugen nur eine Warnung |
-| Zusatzfelder aus `bind()` und `contextualize()` in der Ausgabe | ja | derzeit nein, sie gehen bei der Weitergabe verloren; Behebung in einer kommenden Version |
+| Zusatzfelder aus `bind()` und `contextualize()` in der Ausgabe | ja | ja, auch aus Kindprozessen |
 
 ## 2 Installation und Voraussetzungen
 
@@ -49,7 +49,7 @@ Jeder Kindprozess bekommt beim Start eine eigene Pipe zum `main`-Prozess, in ein
 
 Gefiltert wird dort, wo eine Meldung entsteht. Was die eingestellte Mindeststufe nicht erreicht, geht gar nicht erst durch die Pipe.
 
-Durch die Pipe geht je Meldung: der Zeitstempel, den der meldende Prozess beim Aufruf setzt, die Stufe, Name und Kennung des Prozesses, der Name der Meldung, Modul, Funktion und Zeile des Aufrufs und der fertige Text der Meldung, eine Rückverfolgung als Text eingeschlossen. Mehr geht nicht hindurch; was das für das Format der Ausgabe bedeutet, steht in Kapitel 5.3.
+Durch die Pipe geht je Meldung alles, was loguru zu ihr festhält: der Zeitstempel, den der meldende Prozess beim Aufruf setzt, und die Zeit seit dessen Start, die Stufe, Name und Kennung von Prozess und Thread, der Name der Meldung, Modul, Funktion, Datei und Zeile des Aufrufs, die mit `bind()` und `contextualize()` angehängten Werte und der fertige Text der Meldung, eine Rückverfolgung als Text eingeschlossen. Der `main`-Prozess setzt diese Angaben beim Schreiben wieder ein, sodass das Format der Ausgabe sie so zeigt, wie der meldende Prozess sie gesetzt hat (Kapitel 5.3).
 
 Der `main`-Prozess reiht seine eigenen Meldungen in dieselbe Ordnung ein. Er hält jede Meldung ein kurzes Zeitfenster lang zurück, als Vorgabe 100 ms, und schreibt die Meldungen dann nach ihrem Zeitstempel geordnet. Eine Meldung, die erst nach Ablauf dieses Fensters ankommt, wird sofort geschrieben, gegebenenfalls also außer der Reihe.
 
@@ -145,7 +145,7 @@ Das ist der globale Logger von loguru selbst, kein Nachbau und keine Hülle. Sei
 
 Was die Anwendung nach `setup()` oder `attach()` nicht tun sollte, ist die Ausgaben des Loggers selbst zu verändern: `logger.add()` legte eine Ausgabe an, die nur die Meldungen des eigenen Prozesses erhält und an der Ordnung nach Zeit vorbeischreibt; `logger.remove()` und `logger.configure()` trennten die Verbindung zu logdruid. Ausgaben gehören in die Konfigurationsdatei (Kapitel 5).
 
-`logger.bind()` und `logger.contextualize()` lassen sich aufrufen, ohne dass etwas scheitert, aber die angehängten Werte kommen derzeit nicht in der Ausgabe an, auch nicht bei Meldungen des `main`-Prozesses. Ein Format, das ein solches Feld mit `{extra[...]}` anspricht, lässt die Meldungen ganz verschwinden (Kapitel 5.3). Das wird in einer kommenden Version behoben.
+`logger.bind()` und `logger.contextualize()` wirken wie bei loguru: Die angehängten Werte stehen im Format unter `{extra}` bzw. `{extra[schlüssel]}`, für Meldungen jedes Prozesses. Ein Wert aus einem Kindprozess muss dafür durch die Pipe; lässt er sich nicht pickeln, etwa ein Lock oder eine offene Datei, kommt er als Text an (`str(wert)`), und die Meldung geht nicht verloren. Im `main`-Prozess bleibt jeder Wert das ursprüngliche Objekt.
 
 Empfohlene Bedeutung der Stufen – logdruid erzwingt sie nicht, sie hilft aber beim Einstellen und beim Einbinden von Bibliotheken (Kapitel 6):
 
@@ -259,14 +259,12 @@ Die Schlüssel `sink`, `level`, `filter`, `enqueue` und `context` setzt logdruid
 
 Als Vorgabe ist die Konsole eingeschaltet und die Datei ausgeschaltet. Ohne `format` gilt das Vorgabe-Format von loguru. Ein relativer Pfad der Datei gilt relativ zum Arbeitsverzeichnis beim Start; fehlende Verzeichnisse legt loguru selbst an.
 
-**Welche Felder das Format verwenden kann.** Aus Kapitel 3 folgt, was in der Ausgabe stimmt: `{time}`, `{level}`, `{message}`, `{name}`, `{module}`, `{function}`, `{line}` und `{process}` mit Name und Kennung. Die folgenden Felder stimmen derzeit nicht, auch nicht für Meldungen des `main`-Prozesses; das wird in einer kommenden Version behoben:
+**Welche Felder das Format verwenden kann.** Alle Felder von loguru, mit den Werten, die der meldende Prozess gesetzt hat (Kapitel 3): `{time}`, `{elapsed}`, `{level}`, `{message}`, `{name}`, `{module}`, `{function}`, `{file}`, `{line}`, `{process}`, `{thread}` und `{extra}`. Zwei Besonderheiten:
 
-- `{extra}` ist immer leer, Werte aus `bind()` und `contextualize()` fehlen. Ein Format mit `{extra[schlüssel]}` lässt jede Meldung verschwinden; loguru schreibt dann stattdessen „Logging error in Loguru Handler" auf `stderr`.
-- `{file}` nennt immer die Datei von logdruid, nicht die der Meldung.
-- `{thread}` nennt den Thread, der die Meldung schreibt, und damit nicht verlässlich den, in dem gemeldet wurde.
-- `{elapsed}` bezieht sich auf den Zeitpunkt des Schreibens im `main`-Prozess, nicht auf die Meldung.
+- `{elapsed}` ist die Zeit seit dem Start des Prozesses, der meldet; ein Kindprozess zählt ab seinem eigenen Start. Das ist dieselbe Bedeutung, die das Feld bei loguru in jedem einzelnen Prozess hat.
+- Eine Rückverfolgung steht im Text der Meldung, also in `{message}`; ein ausdrückliches `{exception}` im Format bleibt leer.
 
-Eine Rückverfolgung steht im Text der Meldung, also in `{message}`; ein ausdrückliches `{exception}` im Format bleibt leer. Mit `serialize = true` enthält das JSON dieselben Felder in demselben Zustand.
+Wie bei loguru selbst gilt: Spricht das Format einen Wert mit `{extra[schlüssel]}` an, muss jede Meldung ihn haben; einer Meldung ohne ihn verweigert loguru das Format und schreibt stattdessen „Logging error in Loguru Handler“ auf `stderr`. Mit `serialize = true` enthält das JSON dieselben Felder.
 
 **`backtrace` und `diagnose`** stehen zwar je Ausgabe in deren Tabelle, wirken aber immer auf beide Ausgaben gleich: `diagnose`, die Anzeige der Werte von Variablen in einer Rückverfolgung, ist an, sobald eine eingeschaltete Ausgabe es einschaltet; `backtrace` bleibt an, solange nicht alle eingeschalteten Ausgaben es abschalten. Der Grund liegt in Kapitel 3: Die Rückverfolgung wird in dem Prozess, der meldet, einmal zu Text, für alle Ausgaben. Am klarsten ist es, beide in beiden Tabellen gleich zu setzen. Als Vorgabe ist `diagnose` aus, wie loguru es für den Betrieb rät, weil es Daten preisgeben kann; `backtrace` ist an.
 
@@ -482,14 +480,13 @@ Zusammengefasst, was die Kapitel davor an Ort und Stelle schon nennen:
 
 - Geprüft und freigegeben nur für Kindprozesse mit der Startmethode `spawn`; die Freigabe für `fork` folgt in einer späteren Version (Kapitel 2).
 - Geprüft nur unter Linux, mit Python 3.11 bis 3.13 (Kapitel 2).
-- Werte aus `bind()` und `contextualize()` sowie die Felder `{extra}`, `{file}`, `{thread}` und `{elapsed}` kommen nicht richtig in der Ausgabe an; ein Format mit `{extra[...]}` lässt Meldungen verschwinden. Behebung in einer kommenden Version (Kapitel 5.3).
 - Nicht abgefangene Ausnahmen gehen nicht ins Log, sondern direkt auf `stderr`; für Kindprozesse gibt es einen Behelf mit `logger.catch`. Behebung in einer kommenden Version (Kapitel 7.2).
 - Nur Kindprozesse des `main`-Prozesses lassen sich anschließen, keine Prozesse, die ein Kindprozess erzeugt; ein `LogLink` gehört genau einem Prozess (Kapitel 4.2).
 - `backtrace` und `diagnose` wirken auf beide Ausgaben gemeinsam (Kapitel 5.3).
 
 ## 9 API-Referenz
 
-Zur öffentlichen Schnittstelle gehören genau die Namen dieses Kapitels: `logger`, `setup`, `check_config`, `link`, `attach`, `shutdown`, `LogLink` und `CONFIG_FILE_NAME`. Von `LogLink` sind nur der Typ und `release()` öffentlich. Alles andere ist intern und kann sich ohne Ankündigung ändern; was „Ankündigung" heißt, steht unter „Versionen und Stabilität" in Kapitel 2. Importiert wird aus dem Paket: `import logdruid` bzw. `from logdruid import logger, LogLink`.
+Zur öffentlichen Schnittstelle gehören genau die Namen dieses Kapitels: `logger`, `setup`, `check_config`, `link`, `attach`, `shutdown`, `LogLink` und `CONFIG_FILE_NAME`. Von `LogLink` sind nur der Typ und `release()` öffentlich. Alles andere ist intern und kann sich ohne Ankündigung ändern; was „Ankündigung“ heißt, steht unter „Versionen und Stabilität“ in Kapitel 2. Importiert wird aus dem Paket: `import logdruid` bzw. `from logdruid import logger, LogLink`.
 
 ### `logger`
 
