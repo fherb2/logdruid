@@ -163,3 +163,18 @@
   auf dem Rechner `xps` ein passendes Poetry (System-Poetry 1.8.2 liest
   die `[project]`-Tabelle nicht). `0.1.0.dev3` bleibt auf PyPI stehen;
   `pip install logdruid` nimmt jetzt `0.1.0`.
+- Entwicklungsumgebung im Projekt (2026-10-22): Poetry 2.x in
+  `.venv-poetry/`, das Projekt-venv in `.venv/`, beide in `.gitignore`.
+  Ist in der Shell ein anderes venv aktiv (`VIRTUAL_ENV`), nimmt Poetry
+  dieses statt `.venv/`; vorher `deactivate`.
+- **Zweigmodell eingerichtet** (2026-10-22, Skill `git-branch-model`,
+  festgelegt in `.claude/git-branch-model.json`): gearbeitet wird auf
+  `dev`; `main` ist der Release-Zweig und bekommt nur bei einem Release
+  `dev` per Merge, getaggt wird dort. Der Verwaltungszweig
+  `repo-management` trägt nur Dateien, die auf jedem Zweig gleich sein
+  müssen (`.gitignore`, `poetry.toml`, `LICENSE`, die drei Workflows,
+  die Modell-Datei); sie werden nie gemergt, sondern mit
+  `git restore --source=repo-management` übernommen und nur dort
+  geändert. `pyproject.toml`, `CHANGELOG.md` und `README.md` gehören
+  nicht dazu, weil sie sich mit der Entwicklung ändern. `tests.yml`
+  läuft nicht auf `repo-management`.
